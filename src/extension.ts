@@ -114,6 +114,13 @@ function getWebviewContent() {
 	return web.getWebContent();
 }
 
+interface DebugEdit {
+	documentUri: vscode.Uri;
+	range: vscode.Range;
+	oldText: string;
+	newText: string;
+}
+
 export class Tracker {
 	private disposable: vscode.Disposable;
 	constructor() { }
@@ -121,6 +128,8 @@ export class Tracker {
 	public editLogPath;
 	private fsWatcher;
 	private debugMode: boolean = false;
+	private debugEdits: DebugEdit[] = [];
+	private debugEditListener: vscode.Disposable | undefined;
 	//TODO: set the above equal to fs.watch in initialize, and then close it when dispose method is called.
 	private readonly maxLogFileSize = 19;
 
@@ -141,6 +150,94 @@ export class Tracker {
 		// 	}
 		//   }, 10000);
 	}
+
+	public async toggleDebugMode(): Promise<void> {
+		this.debugMode = !this.debugMode;
+		const mode = this.debugMode ? "debug on" : "debug off";
+		this.logEdits('Mode Change', mode, "", false);
+
+		if(this.debugMode) {
+			await this.rollForwardDebugEdits();
+			this.startDebugEditTracking();
+		} else {
+			await this.rollbackDebugEdits();
+			this.stopDebugEditTracking();
+		}
+		this.writeDebugEditsToFile();
+		vscode.window.showInformationMessage(`Debug mode is now ${this.debugMode ? "ON" : "OFF"}`);
+	}
+
+	private startDebugEditTracking() {
+		this.debugEdits = [];
+		const activeDocUri = vscode.window.activeTextEditor?.document.uri.toString();
+		this.debugEditListener = vscode.workspace.onDidChangeTextDocument(event => {
+			if (!this.debugMode) {return;}
+			//For now, only track edits for the currently active file.
+			if (event.document.uri.toString() !== activeDocUri) {return;}
+			for (const change of event.contentChanges) {
+				const oldText = event.document.getText(change.range);
+				this.debugEdits.push({
+					documentUri: event.document.uri,
+					range: change.range,
+					oldText: oldText,
+					newText: change.text
+				});
+			}
+		});
+	}
+
+	private stopDebugEditTracking() {
+		if (this.debugEditListener) {
+			this.debugEditListener.dispose();
+			this.debugEditListener = undefined;
+		}
+	}
+
+	private async rollbackDebugEdits() {
+		const activeDocUri = vscode.window.activeTextEditor?.document.uri.toString();
+		//Roll back in reverse order
+		for (const edit of this.debugEdits.slice().reverse()) {
+			if (edit.documentUri.toString() !== activeDocUri) { continue; }
+			const doc = await vscode.workspace.openTextDocument(edit.documentUri);
+			const editor = await vscode.window.showTextDocument(doc, { preview: false });
+			await editor.edit(editBuilder => {
+				editBuilder.replace(edit.range, edit.oldText);
+			});
+		}
+	}
+
+	private async rollForwardDebugEdits() {
+		const activeDocUri = vscode.window.activeTextEditor?.document.uri.toString();
+		//Reapply edits
+		for (const edit of this.debugEdits) {
+			if (edit.documentUri.toString() !== activeDocUri) { continue; }
+			const doc = await vscode.workspace.openTextDocument(edit.documentUri);
+			const editor = await vscode.window.showTextDocument(doc, { preview: false });
+			await editor.edit(editBuilder => {
+				editBuilder.replace(edit.range, edit.newText);
+			});
+		}
+	}
+
+	private writeDebugEditsToFile() {
+		const debugEditsPath = path.join(
+			vscode.workspace.workspaceFolders[0].uri.fsPath || '',
+			"log",
+			"debugEdits.json"
+		);
+
+		const serializableEdits = this.debugEdits.map(edit => ({
+			documentUri: edit.documentUri.toString(),
+			range: {
+				start: { line: edit.range.start.line, character: edit.range.start.character },
+				end: { line: edit.range.end.line, character: edit.range.end.character }
+			},
+			oldText: edit.oldText,
+			newText: edit.newText
+		}));
+		fs.writeFileSync(debugEditsPath, JSON.stringify(serializableEdits, null, 2));
+	}
+
 	public dispose(): void {
 		this.disposable.dispose();
 		this.fsWatcher.dispose();
@@ -725,13 +822,6 @@ export class Tracker {
 			}
 		});
 		readLogFile.pipe(parseJSONStream);
-	}
-
-	public toggleDebugMode(): void {
-		this.debugMode = !this.debugMode;
-		const mode = this.debugMode ? "debug on" : "debug off";
-		this.logEdits('Mode Change', mode, "", false);
-		vscode.window.showInformationMessage(`Debug mode is now ${this.debugMode ? "ON" : "OFF"}`);
 	}
 }
 
