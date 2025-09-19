@@ -121,6 +121,11 @@ interface DebugEdit {
 	newText: string;
 }
 
+interface DebugFileState {
+	baseText: string;
+	edits: DebugEdit[];
+}
+
 export class Tracker {
 	private disposable: vscode.Disposable;
 	constructor() { }
@@ -131,6 +136,7 @@ export class Tracker {
 	private debugEdits: DebugEdit[] = [];
 	private debugEditListener: vscode.Disposable | undefined;
 	private debugBaseText: string | undefined;
+	private debugFileStates: Map<string, DebugFileState> = new Map();
 	//TODO: set the above equal to fs.watch in initialize, and then close it when dispose method is called.
 	private readonly maxLogFileSize = 19;
 
@@ -179,10 +185,19 @@ export class Tracker {
 		this.debugEditListener = vscode.workspace.onDidChangeTextDocument(event => {
 			if (!this.debugMode) {return;}
 			//For now, only track edits for the currently active file.
-			if (event.document.uri.toString() !== activeDocUri) {return;}
+			const uriStr = event.document.uri.toString();
+			if (uriStr.includes('/log/') || uriStr.endsWith('editLog.json') || uriStr.endsWith('debugEdits.json')) {return;}
+
+			if (!this.debugFileStates.has(uriStr)) {
+				this.debugFileStates.set(uriStr, {
+					baseText: event.document.getText(),
+					edits: []
+				});
+        	}
+        	const fileState = this.debugFileStates.get(uriStr)!;
 			for (const change of event.contentChanges) {
 				const oldText = event.document.getText(change.range);
-				this.debugEdits.push({
+				fileState.edits.push({
 					documentUri: event.document.uri,
 					range: change.range,
 					oldText: oldText,
@@ -200,45 +215,65 @@ export class Tracker {
 	}
 
 	private async rollbackDebugEdits() {
-		// const activeDocUri = vscode.window.activeTextEditor?.document.uri.toString();
-		// //Roll back in reverse order
-		// for (const edit of this.debugEdits.slice().reverse()) {
-		// 	if (edit.documentUri.toString() !== activeDocUri) { continue; }
-		// 	const doc = await vscode.workspace.openTextDocument(edit.documentUri);
-		// 	const editor = await vscode.window.showTextDocument(doc, { preview: false });
-		// 	await editor.edit(editBuilder => {
-		// 		editBuilder.replace(edit.range, edit.oldText);
-		// 	});
-		// }
-		const editor = vscode.window.activeTextEditor;
-			if (!editor || this.debugBaseText === undefined) { return; }
+		for (const [uriStr, fileState] of this.debugFileStates.entries()) {
+			const doc = await vscode.workspace.openTextDocument(vscode.Uri.parse(uriStr));
+			const editor = await vscode.window.showTextDocument(doc, { preview: false });
 			const fullRange = new vscode.Range(
-				editor.document.positionAt(0),
-				editor.document.positionAt(editor.document.getText().length)
+				doc.positionAt(0),
+				doc.positionAt(doc.getText().length)
 			);
 			await editor.edit(editBuilder => {
-				editBuilder.replace(fullRange, this.debugBaseText!);
+				editBuilder.replace(fullRange, fileState.baseText);
 			});
+		}
+
+		//Roll back in reverse order
+
+		// const editor = vscode.window.activeTextEditor;
+		// 	if (!editor || this.debugBaseText === undefined) { return; }
+		// 	const fullRange = new vscode.Range(
+		// 		editor.document.positionAt(0),
+		// 		editor.document.positionAt(editor.document.getText().length)
+		// 	);
+		// 	await editor.edit(editBuilder => {
+		// 		editBuilder.replace(fullRange, this.debugBaseText!);
+		// 	});
 	}
 
 	private async rollForwardDebugEdits() {
-		const editor = vscode.window.activeTextEditor;
-		if (!editor || this.debugBaseText === undefined) { return; }
-		// Restore base text first
-		const fullRange = new vscode.Range(
-			editor.document.positionAt(0),
-			editor.document.positionAt(editor.document.getText().length)
-		);
-		await editor.edit(editBuilder => {
-			editBuilder.replace(fullRange, this.debugBaseText!);
-		});
-		// Then re-apply debug edits
-		for (const edit of this.debugEdits) {
-			if (edit.documentUri.toString() !== editor.document.uri.toString()) { continue; }
+		for (const [uriStr, fileState] of this.debugFileStates.entries()) {
+			const doc = await vscode.workspace.openTextDocument(vscode.Uri.parse(uriStr));
+			const editor = await vscode.window.showTextDocument(doc, { preview: false });
+			const fullRange = new vscode.Range(
+				doc.positionAt(0),
+				doc.positionAt(doc.getText().length)
+			);
 			await editor.edit(editBuilder => {
-				editBuilder.replace(edit.range, edit.newText);
+				editBuilder.replace(fullRange, fileState.baseText);
 			});
+			for (const edit of fileState.edits) {
+				await editor.edit(editBuilder => {
+					editBuilder.replace(edit.range, edit.newText);
+				});
+			}
 		}
+		// const editor = vscode.window.activeTextEditor;
+		// if (!editor || this.debugBaseText === undefined) { return; }
+		// // Restore base text first
+		// const fullRange = new vscode.Range(
+		// 	editor.document.positionAt(0),
+		// 	editor.document.positionAt(editor.document.getText().length)
+		// );
+		// await editor.edit(editBuilder => {
+		// 	editBuilder.replace(fullRange, this.debugBaseText!);
+		// });
+		// // Then re-apply debug edits
+		// for (const edit of this.debugEdits) {
+		// 	if (edit.documentUri.toString() !== editor.document.uri.toString()) { continue; }
+		// 	await editor.edit(editBuilder => {
+		// 		editBuilder.replace(edit.range, edit.newText);
+		// 	});
+		// }
 	}
 
 	private writeDebugEditsToFile() {
