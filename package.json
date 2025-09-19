@@ -1,6 +1,7 @@
 {
 	"name": "actiontracking",
 	"displayName": "actiontracking",
+	"publisher": "jackhuo",
 	"description": "",
 	"version": "0.0.1",
 	"engines": {
@@ -19,6 +20,18 @@
 				"command": "catCoding.start",
 				"title": "Edit Info",
 				"category": "Action Tracking"
+			},
+			{
+				"command": "catCoding.toggleDebugMode",
+				"title": "Toggle Debug Mode",
+				"category": "Action Tracking"
+			}
+		],
+		"keybindings": [
+			{
+				"command": "catCoding.toggleDebugMode",
+				"key": "ctrl+alt+d",
+				"when": "editorTextFocus"
 			}
 		]
 	},

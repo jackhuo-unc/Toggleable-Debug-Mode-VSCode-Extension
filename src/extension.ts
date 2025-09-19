@@ -83,6 +83,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Setup log file for project under project directory
 	let tracker = new Tracker();
+	context.subscriptions.push(
+		vscode.commands.registerCommand('catCoding.toggleDebugMode', () => {
+			tracker.toggleDebugMode();
+		})
+	);
 	if (!fs.existsSync(vscode.workspace.workspaceFolders[0].uri.fsPath + path.sep + "log")) {
 		fs.mkdirSync(vscode.workspace.workspaceFolders[0].uri.fsPath + path.sep + "log");
 	}
@@ -115,6 +120,7 @@ export class Tracker {
 	private editLogFile;
 	public editLogPath;
 	private fsWatcher;
+	private debugMode: boolean = false;
 	//TODO: set the above equal to fs.watch in initialize, and then close it when dispose method is called.
 	private readonly maxLogFileSize = 19;
 
@@ -719,6 +725,13 @@ export class Tracker {
 			}
 		});
 		readLogFile.pipe(parseJSONStream);
+	}
+
+	public toggleDebugMode(): void {
+		this.debugMode = !this.debugMode;
+		const mode = this.debugMode ? "debug on" : "debug off";
+		this.logEdits('Mode Change', mode, "", false);
+		vscode.window.showInformationMessage(`Debug mode is now ${this.debugMode ? "ON" : "OFF"}`);
 	}
 }
 
