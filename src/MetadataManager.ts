@@ -9,7 +9,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 export interface CharRecord {
-	id: string;
+	id: number;
 	ch: string;
 	isDeleted: boolean;
 	isDebug: boolean;
@@ -39,7 +39,7 @@ export interface ChangeLogEntry {
 }
 
 export class MetadataManager {
-    private readonly context: vscode.ExtensionContext;
+	private readonly context: vscode.ExtensionContext;
 	private readonly storageDir: string;
 
 	// in-memory caches
@@ -47,7 +47,7 @@ export class MetadataManager {
 	private modeDeltas: Map<string, ModeDeltaFile> = new Map();
 	private changeLog: ChangeLogEntry[] = [];
 
-    constructor(context: vscode.ExtensionContext) {
+	constructor(context: vscode.ExtensionContext) {
 		this.context = context;
 
 		// We'll put metadata next to the workspace in a hidden folder for now.
@@ -69,43 +69,90 @@ export class MetadataManager {
 		// this.changeLog = ...
 	}
 
-    private async ensureStorageDir(): Promise<void> {
+	private async ensureStorageDir(): Promise<void> {
 		await fs.promises.mkdir(this.storageDir, { recursive: true });
 	}
 
-    public getCharLedgerForFile(filePath: string): FileCharLedger | undefined {
+	public getCharLedgerForFile(filePath: string): FileCharLedger | undefined {
 		return this.charLedgers.get(filePath);
 	}
 
-    public setCharLedgerForFile(ledger: FileCharLedger): void {
+	public setCharLedgerForFile(ledger: FileCharLedger): void {
 		// console.log('[hidden-overlay][MetadataManager] setCharLedgerForFile', ledger.file
-        // Path);
+		// Path);
 		this.charLedgers.set(ledger.filePath, ledger);
 		// TODO: persist to disk
 	}
 
-    public getModeDeltaForFile(filePath: string): ModeDeltaFile | undefined {
+	public getModeDeltaForFile(filePath: string): ModeDeltaFile | undefined {
 		return this.modeDeltas.get(filePath);
 	}
 
-    public setModeDeltaForFile(delta: ModeDeltaFile): void {
+	public setModeDeltaForFile(delta: ModeDeltaFile): void {
 		// console.log('[hidden-overlay][MetadataManager] setModeDeltaForFile', delta.filePath);
 		this.modeDeltas.set(delta.filePath, delta);
 		// TODO: persist to disk
 	}
 
-    public appendChangeLog(entry: ChangeLogEntry): void {
+	public appendChangeLog(entry: ChangeLogEntry): void {
 		console.log('[hidden-overlay][MetadataManager] appendChangeLog', entry);
 		this.changeLog.push(entry);
 		// TODO: persist incrementally
 	}
 
-    public getChangeLog(): ChangeLogEntry[] {
+	public getChangeLog(): ChangeLogEntry[] {
 		return this.changeLog;
+	}
+
+	public insertChar(filePath: string, leftID: number, rightID: number, newChar: string, isDebug: boolean): void {
+		const ledger = this.charLedgers.get(filePath);
+		if (!ledger) return;
+
+		const newID = (leftID + rightID) / 2; // naive fractional
+		const newRecord = { id: newID, ch: newChar, isDeleted: false, isDebug };
+		ledger.chars.push(newRecord);
+		ledger.chars.sort((a, b) => a.id - b.id);
 	}
 
 	public dispose(): void {
 		console.log('[hidden-overlay][MetadataManager] dispose()');
 		// optional: flush caches to disk on deactivate
 	}
+
+	// Temporary sample ledger generator (for demo purposes)
+	public seedLedgerForFile(filePath: string): void {
+		console.log('[hidden-overlay][MetadataManager] seeding fake ledger for', filePath);
+
+		// You can replace this with a real parse later.
+		const fakeChars = [
+			{ id: 1, ch: 'c', isDeleted: false, isDebug: false },
+			{ id: 2, ch: 'o', isDeleted: false, isDebug: false },
+			{ id: 3, ch: 'n', isDeleted: false, isDebug: false },
+			{ id: 4, ch: 's', isDeleted: false, isDebug: false },
+			{ id: 5, ch: 'o', isDeleted: false, isDebug: false },
+			{ id: 6, ch: 'l', isDeleted: false, isDebug: false },
+			{ id: 7, ch: 'e', isDeleted: false, isDebug: false },
+			{ id: 8, ch: '.', isDeleted: false, isDebug: false },
+			{ id: 9, ch: 'l', isDeleted: false, isDebug: false },
+			{ id: 10, ch: 'o', isDeleted: false, isDebug: false },
+			{ id: 11, ch: 'g', isDeleted: false, isDebug: false },
+			{ id: 12, ch: '(', isDeleted: false, isDebug: false },
+			{ id: 13, ch: '"', isDeleted: false, isDebug: false },
+			{ id: 14, ch: 'd', isDeleted: false, isDebug: true }, // ← debug-only chars
+			{ id: 15, ch: 'e', isDeleted: false, isDebug: true },
+			{ id: 16, ch: 'b', isDeleted: false, isDebug: true },
+			{ id: 17, ch: 'u', isDeleted: false, isDebug: true },
+			{ id: 18, ch: 'g', isDeleted: false, isDebug: true },
+			{ id: 19, ch: '"', isDeleted: false, isDebug: false },
+			{ id: 20, ch: ')', isDeleted: false, isDebug: false },
+			{ id: 21, ch: ';', isDeleted: false, isDebug: false }
+		];
+
+		const ledger = {
+			filePath,
+			chars: fakeChars
+		};
+		this.charLedgers.set(filePath, ledger);
+	}
+
 }
