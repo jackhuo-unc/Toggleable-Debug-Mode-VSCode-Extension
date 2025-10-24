@@ -15,7 +15,7 @@ import { privateEncrypt } from 'crypto';
 const axios = require('axios');
 const { createHash } = require('crypto');
 
-export class LogNameMannager {
+export class LogNameManager {
 	private static readonly staticInfoFile: string = "staticInfo.txt";
 	private static readonly dynamicInfoFile: string = "dynamicInfo.txt";
 	private static staticFileStore: fs.PathLike;

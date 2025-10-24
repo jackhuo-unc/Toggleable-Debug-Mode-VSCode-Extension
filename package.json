@@ -19,6 +19,11 @@
 				"command": "catCoding.start",
 				"title": "Edit Info",
 				"category": "Action Tracking"
+			},
+			{
+				"command": "hiddenOverlay.toggleDebugMode",
+				"title": "Toggle Debug Overlay",
+				"category": "Hidden Overlay"
 			}
 		]
 	},
