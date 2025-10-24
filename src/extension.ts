@@ -47,7 +47,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	overlayManager = new HiddenCodeOverlay(context, metadataManager);
 
 	// 2. Initialize tracker (file edits, terminals, logging, etc.)
-	trackerManager = new TrackerManager(context /*, optional LogNameManager instance */);
+	trackerManager = new TrackerManager(context, metadataManager!, overlayManager!);
 
 	// 3. Initialize UI (status bar, webview commands, etc.)
 	uiManager = new UIManager(context, overlayManager);
@@ -72,6 +72,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	await metadataManager.init();
 	await overlayManager.init();
 	uiManager.initStatusBar();
+
+	context.subscriptions.push(trackerManager!);
 
 	console.log('[hidden-overlay] activate() finished');
 
@@ -125,7 +127,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	}
 
 	// Setup log file for project under project directory
-	let tracker = new TrackerManager(context);
+	let tracker = new TrackerManager(context, metadataManager!, overlayManager!);
 	if (!fs.existsSync(vscode.workspace.workspaceFolders[0].uri.fsPath + path.sep + "log")) {
 		fs.mkdirSync(vscode.workspace.workspaceFolders[0].uri.fsPath + path.sep + "log");
 	}
