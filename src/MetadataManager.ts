@@ -171,7 +171,7 @@ export class MetadataManager {
 	}
 
 	// Ensure a ledger exists for this doc, seeded from current buffer
-    private ensureLedgerForDoc(doc: vscode.TextDocument): FileCharLedger {
+    public ensureLedgerForDoc(doc: vscode.TextDocument): FileCharLedger {
         const filePath = doc.uri.fsPath;
         let ledger = this.charLedgers.get(filePath);
         if (!ledger) {

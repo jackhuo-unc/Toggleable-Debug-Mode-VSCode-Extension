@@ -40,23 +40,48 @@ let terminalSessionWatcher;
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-	console.log('[hidden-overlay] activate() called');
+	console.log('[debug-toggle] activate() called');
 
 	// 1. Initialize metadata / overlay core
 	metadataManager = new MetadataManager(context);
 	overlayManager = new HiddenCodeOverlay(context, metadataManager);
 
-	// 2. Initialize tracker (file edits, terminals, logging, etc.)
-	trackerManager = new TrackerManager(context /*, optional LogNameManager instance */);
-
 	// 3. Initialize UI (status bar, webview commands, etc.)
 	uiManager = new UIManager(context, overlayManager);
 
+
 	// 4. Register extension commands here
+	// context.subscriptions.push(
+	// 	vscode.commands.registerCommand('catCoding.start', async () => {
+	// 		console.log('[debug-toggle] command catCoding.start fired');
+	// 		uiManager?.openCatCodingWebview();
+	// 	})
+	// );
+
 	context.subscriptions.push(
-		vscode.commands.registerCommand('catCoding.start', async () => {
-			console.log('[hidden-overlay] command catCoding.start fired');
-			uiManager?.openCatCodingWebview();
+		vscode.commands.registerCommand('catCoding.start', () => {
+			const panel = vscode.window.createWebviewPanel(
+				'catCoding',
+				'Action Tracking',
+				vscode.ViewColumn.One,
+				{
+					enableScripts: true
+				}
+			);
+			let username = LogNameManager.readUsername();
+			panel.webview.html = getWebviewContent();
+			panel.webview.postMessage({
+				username: username,
+			});
+			// Handle messages from the webview
+			panel.webview.onDidReceiveMessage(
+				message => {
+					console.log(message);
+					LogNameManager.updateUsername(message);
+				},
+				undefined,
+				context.subscriptions
+			);
 		})
 	);
 
@@ -73,35 +98,31 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	await overlayManager.init();
 	uiManager.initStatusBar();
 
-	console.log('[hidden-overlay] activate() finished');
+	console.log('[debug-toggle] activate() finished');
 
-	// //Init web (For non-static info)
-	// context.subscriptions.push(
-	// 	vscode.commands.registerCommand('catCoding.start', () => {
-	// 		const panel = vscode.window.createWebviewPanel(
-	// 			'catCoding',
-	// 			'Action Tracking',
-	// 			vscode.ViewColumn.One,
-	// 			{
-	// 				enableScripts: true
-	// 			}
-	// 		);
-	// 		let username = LogNameManager.readUsername();
-	// 		panel.webview.html = getWebviewContent();
-	// 		panel.webview.postMessage({
-	// 			username: username,
-	// 		});
-	// 		// Handle messages from the webview
-	// 		panel.webview.onDidReceiveMessage(
-	// 			message => {
-	// 				console.log(message);
-	// 				LogNameManager.updateUsername(message);
-	// 			},
-	// 			undefined,
-	// 			context.subscriptions
-	// 		);
-	// 	})
-	// );
+	//5. Wire up edit interceptions
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeTextDocument((event) => {
+			if (event.contentChanges.length === 0) return;
+			const isDebug = overlayManager?.getMode() === 'debugOn';
+			metadataManager?.handleTextDocumentChange(event.document, event.contentChanges, isDebug);
+			overlayManager?.updateHighlightsForDocument(event.document);
+		})
+	);
+
+	//6. Initialize ledgers for open documents
+	context.subscriptions.push(
+		vscode.workspace.onDidOpenTextDocument((document) => {
+			metadataManager?.ensureLedgerForDoc(document);
+		})
+	);
+
+	// Init ledgers for already open documents
+	for (const document of vscode.workspace.textDocuments) {
+		metadataManager?.ensureLedgerForDoc(document);
+	}
+
+	console.log('[debug-toggle] activate() complete');
 
 	// Save all static info in path in local machine
 	LogNameManager.initializeFileStore();
@@ -124,13 +145,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		LogNameManager.logSessionID = infos[2];
 	}
 
+	// 2. Initialize tracker (file edits, terminals, logging, etc.)
+	trackerManager = new TrackerManager();
+
 	// Setup log file for project under project directory
-	let tracker = new TrackerManager(context);
 	if (!fs.existsSync(vscode.workspace.workspaceFolders[0].uri.fsPath + path.sep + "log")) {
 		fs.mkdirSync(vscode.workspace.workspaceFolders[0].uri.fsPath + path.sep + "log");
 	}
 
-	tracker.editLogPath = vscode.workspace.workspaceFolders[0].uri.fsPath + path.sep + "log" + path.sep + 'editLog.json';
+	trackerManager.editLogPath = vscode.workspace.workspaceFolders[0].uri.fsPath + path.sep + "log" + path.sep + 'editLog.json';
 
 
 
@@ -144,8 +167,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	// 		tracker.initialize();
 	// 	})
 	// );
-	context.subscriptions.push(tracker);
-	tracker.init();
+	trackerManager.init();
+	context.subscriptions.push(trackerManager);
 }
 
 function getWebviewContent() {
@@ -155,7 +178,7 @@ function getWebviewContent() {
 
 
 export function deactivate(): void {
-	console.log('[hidden-overlay] deactivate() called');
+	console.log('[debug-toggle] deactivate() called');
 
 	uiManager?.dispose();
 	overlayManager?.dispose();
