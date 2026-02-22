@@ -2,16 +2,16 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as JSONStream from 'JSONStream';
-import * as https from 'https';
-import * as os from 'os';
-import { send } from 'process';
-import { LOADIPHLPAPI } from 'dns';
-import { serialize } from 'v8';
-import * as web from './web';
-import { exec } from 'child_process';
-import { glob } from 'glob';
-// import { LogNameManager } from './LogNameManager';
-import { error } from 'console';
+// import * as https from 'https';
+// import * as os from 'os';
+// import { send } from 'process';
+// import { LOADIPHLPAPI } from 'dns';
+// import { serialize } from 'v8';
+// import * as web from './web';
+// import { exec } from 'child_process';
+// import { glob } from 'glob';
+// // import { LogNameManager } from './LogNameManager';
+// import { error } from 'console';
 
 
 const axios = require('axios');
@@ -49,10 +49,20 @@ export class TrackerManager {
 	public async init(): Promise<void> {
 		console.log('[hidden-overlay][TrackerManager] init()');
 		this.editLogFile = fs.createWriteStream(this.editLogPath, { flags: 'a' });
-		this.initializeTerminalLog();
+		// this.initializeTerminalLog();
 		this.setupOverridenCommands();
 		this.sendLogFileToServer();
 		this.detactTerminalExceptions();
+		// setInterval(async () => {
+		// 	const result = await this.sendLogFileToServer();
+
+		// 	// Perform actions based on the result
+		// 	if (result === true) {
+		// 	  // Perform specific action
+		// 	  LogNameMannager.updateLogSessionID();
+		// 	  fs.writeFileSync(this.editLogPath, '');
+		// 	}
+		//   }, 10000);
 	}
 
 	// // When a char is inserted/deleted, call metadatamanager to update ledger
@@ -76,15 +86,15 @@ export class TrackerManager {
 	// }
 
 	public dispose(): void {
-		console.log('[hidden-overlay][TrackerManager] dispose()');
-		for (const d of this.disposables) {
-			try {
-				d.dispose();
-			} catch (err) {
-				console.error('[hidden-overlay][TrackerManager] error disposing', err);
-			}
-		}
-		this.disposables.length = 0;
+		// console.log('[hidden-overlay][TrackerManager] dispose()');
+		// for (const d of this.disposables) {
+		// 	try {
+		// 		d.dispose();
+		// 	} catch (err) {
+		// 		console.error('[hidden-overlay][TrackerManager] error disposing', err);
+		// 	}
+		// }
+		// this.disposables.length = 0;
 		this.disposable.dispose();
 		this.fsWatcher.dispose();
 	}
@@ -100,8 +110,16 @@ export class TrackerManager {
 	}
 
 	private async initializeTerminalLog(): Promise<void> {
-		var workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
+		var workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath;
+		if (!workspaceFolder) {
+			console.warn('[TrackerManager] No workspace folder available');
+			return;
+		}
 		var curTerminal = vscode.window.terminals[vscode.window.terminals.length - 1];
+		if (!curTerminal) {
+			console.warn('[TrackerManager] No terminal available');
+			return;
+		}
 		var terminalPid = await curTerminal.processId;
 		var fileName = terminalPid + ".txt";
 		var filePath = path.join(workspaceFolder, "VSCODE-config", "IO-Log", fileName);
@@ -309,6 +327,7 @@ export class TrackerManager {
 		//TODO: fix bug where you can select some text and then type a letter, which deletes the previous letters but this deletion isnt logged.
 		var typeDisposable = vscode.commands.registerCommand('type', (args) => {
 			this.logEdits('input', args.text);
+			console.log('[TrackerManager] type intercepted:', args.text);
 			vscode.commands.executeCommand('default:' + 'type', args);
 		});
 
@@ -324,6 +343,7 @@ export class TrackerManager {
 			this.logEdits('delete', text);
 			deleteDisposable.dispose();
 			vscode.commands.executeCommand("deleteRight").then(() => {
+				console.log('[TrackerManager] deleteRight (Delete key) intercepted');
 				deleteDisposable = vscode.commands.registerCommand('deleteRight', deleteOverride);
 				subscriptions.push(deleteDisposable);
 			});
@@ -375,6 +395,7 @@ export class TrackerManager {
 			this.logEdits('backspace', text);
 			backspaceDisposable.dispose();
 			vscode.commands.executeCommand("deleteLeft").then(() => {
+				// console.log('[TrackerManager] deleteLeft (Backspace) intercepted');
 				backspaceDisposable = vscode.commands.registerCommand('deleteLeft', backspaceOverride);
 				subscriptions.push(backspaceDisposable);
 			});
@@ -408,6 +429,7 @@ export class TrackerManager {
 			this.logEdits('backspace', text);
 			backspaceDisposable.dispose();
 			vscode.commands.executeCommand("deleteLeft").then(() => {
+				// console.log('[TrackerManager] deleteLeft (Backspace) intercepted');
 				backspaceDisposable = vscode.commands.registerCommand('deleteLeft', backspaceOverride);
 				subscriptions.push(backspaceDisposable);
 			});
@@ -669,5 +691,4 @@ export class TrackerManager {
 		});
 		readLogFile.pipe(parseJSONStream);
 	}
-
 }

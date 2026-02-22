@@ -93,7 +93,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
 
 	// Perform any async initialization that needs to happen after wiring
-	await trackerManager.init();
+	// await trackerManager.init();
 	await metadataManager.init();
 	await overlayManager.init();
 	uiManager.initStatusBar();
@@ -112,14 +112,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	//6. Initialize ledgers for open documents
 	context.subscriptions.push(
-		vscode.workspace.onDidOpenTextDocument((document) => {
-			metadataManager?.ensureLedgerForDoc(document);
+		vscode.workspace.onDidOpenTextDocument(async (document) => {
+			await metadataManager?.ensureLedgerForDoc(document);
 		})
 	);
 
 	// Init ledgers for already open documents
 	for (const document of vscode.workspace.textDocuments) {
-		metadataManager?.ensureLedgerForDoc(document);
+		await metadataManager?.ensureLedgerForDoc(document);
 	}
 
 	console.log('[debug-toggle] activate() complete');
@@ -167,7 +167,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	// 		tracker.initialize();
 	// 	})
 	// );
-	trackerManager.init();
+	await trackerManager.init();
 	context.subscriptions.push(trackerManager);
 }
 

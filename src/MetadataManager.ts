@@ -12,9 +12,12 @@ import { v4 as uuid } from 'uuid';
 export interface CharRecord {
 	id: string;
 	ch: string;
-	offset: number;
-	isDeleted: boolean;
 	isDebug: boolean;
+}
+
+export interface FileCharLedger {
+    filePath: string;
+    chars: CharRecord[]; 
 }
 
 export interface DebugSegment {
@@ -22,62 +25,52 @@ export interface DebugSegment {
     end: number;   // exclusive offset in current document text
 }
 
-export interface KeystrokeEvent {
-    kind: 'type' | 'deleteLeft' | 'deleteRight' | 'paste' | 'cut';
-    text: string;
-    uri: string;
-    selections: Array<{ start: vscode.Position; end: vscode.Position }>;
-    isDebug: boolean;
-    timestamp: number;
-}
-
-export interface FileCharLedger {
-	filePath: string;          // absolute or workspace-relative
-	chars: CharRecord[];       // includes tombstoned chars
-}
-
-// export interface ModeDeltaOp {
-// 	op: 'insert' | 'delete';   // can expand later. The assumption in debug code is that you never delete any non-debug code, only insert new debugging code.
-// 	targetBefore: string;      // e.g. insert after this char ID, or delete range start ID
-// 	payload?: any;             // flexible; maybe list of char IDs or text
+// export interface KeystrokeEvent {
+//     kind: 'type' | 'deleteLeft' | 'deleteRight' | 'paste' | 'cut';
+//     text: string;
+//     uri: string;
+//     selections: Array<{ start: vscode.Position; end: vscode.Position }>;
+//     isDebug: boolean;
+//     timestamp: number;
 // }
 
-// export interface ModeDeltaFile {
-// 	filePath: string;
-// 	opsDebugOnToOff: ModeDeltaOp[];
-// 	opsOffToDebugOn: ModeDeltaOp[];
-// }
-
-// export interface ChangeLogEntry {
-// 	timestamp: number;          // not as needed
-// 	action: string;
-// 	data: Record<string, unknown>;
+// export interface FileCharLedger {
+// 	filePath: string;          // absolute or workspace-relative
+// 	chars: CharRecord[];       // includes tombstoned chars
 // }
 
 export class MetadataManager {
 	private readonly context: vscode.ExtensionContext;
+    private charLedgers: Map<string, FileCharLedger> = new Map();
+    private saveQueue: Set<string> = new Set();
+    private saveTimeout: NodeJS.Timeout | null = null;
+
+    // Flag to prevent infinite loops when we programmatically edit files
+    private isApplyingEdit: boolean = false;
+
 	private readonly storageDir: string;
 
 	// in-memory caches
-	private charLedgers: Map<string, FileCharLedger> = new Map();
+	// private charLedgers: Map<string, FileCharLedger> = new Map();
 	// private modeDeltas: Map<string, ModeDeltaFile> = new Map();
 	// private changeLog: ChangeLogEntry[] = [];
 
 	constructor(context: vscode.ExtensionContext) {
 		this.context = context;
+        console.log('[MetadataManager] constructed');
 
 		// We'll put metadata next to the workspace in a hidden folder for now.
 		// You can tune this (or wire to LogNameManager if it already sets up dirs).
-		const workspaceFolders = vscode.workspace.workspaceFolders;
-		const rootFsPath = workspaceFolders?.[0]?.uri.fsPath ?? context.globalStorageUri.fsPath;
-		this.storageDir = path.join(rootFsPath, '.hidden-code');
+		// const workspaceFolders = vscode.workspace.workspaceFolders;
+		// const rootFsPath = workspaceFolders?.[0]?.uri.fsPath ?? context.globalStorageUri.fsPath;
+		// this.storageDir = path.join(rootFsPath, '.hidden-code');
 
 		// console.log('[hidden-overlay][MetadataManager] constructed, storageDir =', this.storageDir);
 	}
 
 	public async init(): Promise<void> {
-		console.log('[hidden-overlay][MetadataManager] init()');
-		await this.ensureStorageDir();
+		console.log('[MetadataManager] init()');
+		// await this.ensureStorageDir();
 
 		// TODO: load existing ledgers, deltas, and changelog from disk if present.
 		// this.charLedgers = ...
@@ -85,305 +78,393 @@ export class MetadataManager {
 		// this.changeLog = ...
 	}
 
-	private async ensureStorageDir(): Promise<void> {
-		await fs.promises.mkdir(this.storageDir, { recursive: true });
-	}
+    //Get the __debuggable__ folder path for a given file
+    private getMetadataDir(filePath: string): string {
+        const dir = path.dirname(filePath);
+        return path.join(dir, '__debuggable__');
+    }
 
-	public getCharLedgerForFile(filePath: string): FileCharLedger | undefined {
-		return this.charLedgers.get(filePath);
-	}
+    //Get the metadata JSON file path for a given source file
+    private getMetadataPath(filePath: string): string {
+        const metaDir = this.getMetadataDir(filePath);
+        const baseName = path.basename(filePath);
+        return path.join(metaDir, `${baseName}.json`);
+    }
 
-	public setCharLedgerForFile(ledger: FileCharLedger): void {
-		// console.log('[hidden-overlay][MetadataManager] setCharLedgerForFile', ledger.file
-		// Path);
-		this.charLedgers.set(ledger.filePath, ledger);
-		// TODO: persist to disk
-	}
+    //Check if a file should be tracked (exclude metadata files, config, etc.)
+    private shouldTrackFile(filePath: string): boolean {
+        if (filePath.includes('__debuggable__')) return false;
+        if (filePath.includes('VSCODE-config')) return false;
+        if (filePath.includes('node_modules')) return false;
+        if (filePath.endsWith('.git')) return false;
+        if (filePath.includes(path.sep + 'log' + path.sep)) return false;
+        return true;
+    }
 
-	// public getModeDeltaForFile(filePath: string): ModeDeltaFile | undefined {
-	// 	return this.modeDeltas.get(filePath);
-	// }
-
-	// public setModeDeltaForFile(delta: ModeDeltaFile): void {
-	// 	// console.log('[hidden-overlay][MetadataManager] setModeDeltaForFile', delta.filePath);
-	// 	this.modeDeltas.set(delta.filePath, delta);
-	// 	// TODO: persist to disk
-	// }
-
-	// public appendChangeLog(entry: ChangeLogEntry): void {
-	// 	console.log('[hidden-overlay][MetadataManager] appendChangeLog', entry);
-	// 	this.changeLog.push(entry);
-	// 	// TODO: persist incrementally
-	// }
-
-	// public getChangeLog(): ChangeLogEntry[] {
-	// 	return this.changeLog;
-	// }
-
-	public insertChar(filePath: string, newChar: string, at: number, isDebug: boolean): void {
-		const ledger = this.charLedgers.get(filePath);
-		if (!ledger) return;
-
-		const id = uuid();
-
-		const newRecord = { id, ch: newChar, offset: at, isDeleted: false, isDebug };
-		ledger.chars.splice(at, 0, newRecord);
-
-		for (let i = at + 1; i < ledger.chars.length; i++) {
-			ledger.chars[i].offset += 1;
-		}
-	}
-
-	public deleteChar(filePath: string, at: number): void {
-		const ledger = this.charLedgers.get(filePath);
-		if (!ledger) return;
-
-		const record = ledger.chars.find(c => c.offset === at && !c.isDeleted);
-		if (record) {
-			record.isDeleted = true;
-
-			for (let i = at + 1; i < ledger.chars.length; i++) {
-				ledger.chars[i].offset -= 1;
-			}
-		}
-	}
-
-	public rebuildTextFromLedger(filePath: string): string | null {
-		const ledger = this.charLedgers.get(filePath);
-		if (!ledger) return null;
-		return ledger.chars.filter(c => !c.isDeleted).sort((a, b) => a.offset - b.offset).map(c => c.ch).join('');
-	}
-
-	public buildLedgerFromText(filePath: string): void {
-		//Get the text from the file with the filePath
-		const fileUri = vscode.Uri.file(filePath);
-		vscode.workspace.fs.readFile(fileUri).then((data) => {
-			const text = data.toString();
-			const chars: CharRecord[] = [];
-			for (let i = 0; i < text.length; i++) {
-				const ch = text.charAt(i);
-				const id = uuid();
-				chars.push({ id, ch, offset: i, isDeleted: false, isDebug: false });
-			}
-			const ledger: FileCharLedger = { filePath, chars };
-			this.charLedgers.set(filePath, ledger);
-		});
-	}
-
-	// Ensure a ledger exists for this doc, seeded from current buffer
-    public ensureLedgerForDoc(doc: vscode.TextDocument): FileCharLedger {
+    /**
+     * Ensure a ledger exists for this document.
+     * - If metadata file exists on disk, load it and overwrite the source file
+     * - If not, create ledger from current file content (all chars are debug=false)
+     */
+    public async ensureLedgerForDoc(doc: vscode.TextDocument): Promise<FileCharLedger | null> {
         const filePath = doc.uri.fsPath;
-        let ledger = this.charLedgers.get(filePath);
-        if (!ledger) {
-            const text = doc.getText();
-            const chars: CharRecord[] = [];
-            for (let i = 0; i < text.length; i++) {
-                chars.push({
-                    id: uuid(),
-                    ch: text[i],           // includes '\n'
-                    offset: i,             // continuous offsets
-                    isDeleted: false,
-                    isDebug: false
-                });
-            }
-            ledger = { filePath, chars };
-            this.charLedgers.set(filePath, ledger);
+
+        if (!this.shouldTrackFile(filePath)) {
+            return null;
         }
+
+        // Already in memory?
+        if (this.charLedgers.has(filePath)) {
+            return this.charLedgers.get(filePath)!;
+        }
+
+        const metaPath = this.getMetadataPath(filePath);
+
+        if (fs.existsSync(metaPath)) {
+            // Load from metadata file (source of truth)
+            console.log('[MetadataManager] Loading ledger from disk:', metaPath);
+            return await this.loadLedgerFromDisk(filePath, metaPath);
+        } else {
+            // Create new ledger from current file content
+            console.log('[MetadataManager] Creating new ledger for:', filePath);
+            return this.createLedgerFromText(filePath, doc.getText());
+        }
+    }
+
+       /**
+     * Load ledger from disk and sync to source file
+     */
+    private async loadLedgerFromDisk(filePath: string, metaPath: string): Promise<FileCharLedger | null> {
+        try {
+            const raw = fs.readFileSync(metaPath, 'utf-8');
+            const data = JSON.parse(raw) as FileCharLedger;
+
+            this.charLedgers.set(filePath, data);
+
+            // Metadata is canon—rebuild and overwrite source file
+            // We do NOT do this immediately to avoid conflicts during init
+            // Instead, the HiddenCodeOverlay will handle rebuilding on toggle
+
+            const currentMode = this.context.workspaceState.get<string>('hiddenOverlay.debugMode') ?? 'debugOff';
+            const includeDebug = currentMode === 'debugOn';
+            const rebuiltText = this.buildTextFromLedgerData(data, includeDebug);
+
+            if (rebuiltText !== null) {
+                fs.writeFileSync(filePath, rebuiltText, 'utf-8');
+                console.log('[MetadataManager] Overwrote source file from metadata:', filePath);
+
+                await this.refreshEditorForFile(filePath, rebuiltText);
+            }
+
+            return data;
+        } catch (err) {
+            console.error('[MetadataManager] Failed to load ledger:', err);
+            return null;
+        }
+    }
+
+    private async refreshEditorForFile(filePath: string, newText: string): Promise<void> {
+        const uri = vscode.Uri.file(filePath);
+        
+        // Find if this document is already open
+        const openDoc = vscode.workspace.textDocuments.find(d => d.uri.fsPath === filePath);
+        
+        if (openDoc) {
+            // Apply edit to replace entire content
+            const edit = new vscode.WorkspaceEdit();
+            const fullRange = new vscode.Range(
+                openDoc.positionAt(0),
+                openDoc.positionAt(openDoc.getText().length)
+            );
+            edit.replace(uri, fullRange, newText);
+
+            this.isApplyingEdit = true;
+            try {
+                await vscode.workspace.applyEdit(edit);
+                console.log('[MetadataManager] Refreshed editor for:', filePath);
+            } finally {
+                this.isApplyingEdit = false;
+            }
+        }
+    }
+
+    /**
+     * Build text from ledger data (helper that takes ledger directly)
+     */
+    private buildTextFromLedgerData(ledger: FileCharLedger, includeDebug: boolean): string {
+        const parts: string[] = [];
+        for (const c of ledger.chars) {
+            if (!includeDebug && c.isDebug) continue;
+            parts.push(c.ch);
+        }
+        return parts.join('');
+    }
+
+    /**
+     * Create a new ledger from text content
+     */
+    private createLedgerFromText(filePath: string, text: string): FileCharLedger {
+        const chars: CharRecord[] = [];
+
+        for (const ch of text) {
+            chars.push({
+                id: uuid(),
+                ch,
+                isDebug: false
+            });
+        }
+
+        const ledger: FileCharLedger = { filePath, chars };
+        this.charLedgers.set(filePath, ledger);
+
+        // Save to disk
+        this.queueSave(filePath);
+
         return ledger;
     }
 
-    // Find array index in ledger.chars corresponding to current "visible" offset among non-deleted chars
-    private mapOffsetToArrayIndex(ledger: FileCharLedger, visibleOffset: number): number {
-        if (visibleOffset <= 0) return 0;
-        let count = 0;
-        for (let i = 0; i < ledger.chars.length; i++) {
-            const c = ledger.chars[i];
-            if (!c.isDeleted) {
-                if (count === visibleOffset) return i;
-                count++;
-            }
-        }
-        // append at end
-        return ledger.chars.length;
-    }
-
-    // Recalculate offsets for all chars from a given array index onward (non-deleted only)
-    private recalcOffsetsFrom(ledger: FileCharLedger, startArrayIndex: number = 0): void {
-        let offset = 0;
-        for (let i = 0; i < ledger.chars.length; i++) {
-            const c = ledger.chars[i];
-            if (!c.isDeleted) {
-                c.offset = offset++;
-            }
-        }
-    }
-
-    // Insert a block of text at a given visible offset, tagging new chars
-    private insertText(filePath: string, atVisibleOffset: number, text: string, isDebug: boolean): void {
-        const ledger = this.charLedgers.get(filePath);
-        if (!ledger || text.length === 0) return;
-
-        const insertIdx = this.mapOffsetToArrayIndex(ledger, atVisibleOffset);
-        const newRecords: CharRecord[] = [];
-        for (let i = 0; i < text.length; i++) {
-            newRecords.push({
-                id: uuid(),
-                ch: text[i],
-                offset: -1, // will recalc next
-                isDeleted: false,
-                isDebug
-            });
-        }
-        ledger.chars.splice(insertIdx, 0, ...newRecords);
-        this.recalcOffsetsFrom(ledger, insertIdx);
-    }
-
-    // Delete a visible range [start,end)
-    private deleteRange(filePath: string, startVisibleOffset: number, endVisibleOffset: number): void {
-        const ledger = this.charLedgers.get(filePath);
-        if (!ledger) return;
-        if (endVisibleOffset <= startVisibleOffset) return;
-
-        const startIdx = this.mapOffsetToArrayIndex(ledger, startVisibleOffset);
-        const endIdx = this.mapOffsetToArrayIndex(ledger, endVisibleOffset);
-
-        for (let i = startIdx; i < endIdx; i++) {
-            const c = ledger.chars[i];
-            if (c && !c.isDeleted) c.isDeleted = true;
-        }
-        this.recalcOffsetsFrom(ledger, startIdx);
-    }
-
-    // Replace visible range [start,end) with text
-    private replaceRange(filePath: string, startVisibleOffset: number, endVisibleOffset: number, text: string, isDebug: boolean): void {
-        this.deleteRange(filePath, startVisibleOffset, endVisibleOffset);
-        if (text && text.length > 0) {
-            this.insertText(filePath, startVisibleOffset, text, isDebug);
-        }
-    }
-
-    /**
-     * Track keystrokes (pre-change). Keep it separate from ledger mutation.
+	/**
+     * Get ledger for a file (if loaded)
      */
-    public recordKeystroke(evt: KeystrokeEvent): void {
-        try {
-            const logDir = this.storageDir;
-            const line = JSON.stringify(evt) + '\n';
-            fs.appendFileSync(path.join(logDir, 'keystrokes.jsonl'), line, 'utf8');
-        } catch { /* best-effort logging */ }
+    public getCharLedgerForFile(filePath: string): FileCharLedger | undefined {
+        return this.charLedgers.get(filePath);
     }
 
-    /**
-     * Apply VS Code buffer changes to the per-character ledger.
-     * Use numeric offsets (rangeOffset/rangeLength) with a running shift.
+	/**
+     * Handle VS Code document changes and update the ledger accordingly
      */
     public handleTextDocumentChange(
         doc: vscode.TextDocument,
         changes: readonly vscode.TextDocumentContentChangeEvent[],
-        markDebug: boolean
+        isDebug: boolean
     ): void {
-        const ledger = this.ensureLedgerForDoc(doc);
-        // Apply in ascending order with running shift to map pre-change offsets to current ledger
-        const sorted = [...changes].sort((a, b) => a.rangeOffset - b.rangeOffset);
-        let shift = 0;
+        // Skip if this is our own edit
+        if (this.isApplyingEdit) return;
 
-        for (const chg of sorted) {
-            const oldLen = (chg as any).rangeLength ?? chg.rangeLength ?? doc.getText(chg.range).length;
-            const newLen = chg.text.length;
+        const filePath = doc.uri.fsPath;
 
-            const start = chg.rangeOffset + shift;
-            const end = start + oldLen;
-
-            if (oldLen === 0 && newLen > 0) {
-                // insert
-                this.insertText(doc.uri.fsPath, start, chg.text, markDebug);
-            } else if (oldLen > 0 && newLen === 0) {
-                // delete
-                this.deleteRange(doc.uri.fsPath, start, end);
-            } else if (oldLen > 0 && newLen > 0) {
-                // replace
-                this.replaceRange(doc.uri.fsPath, start, end, chg.text, markDebug);
-            }
-            shift += (newLen - oldLen);
+        if (!this.shouldTrackFile(filePath)) {
+            return;
         }
 
-        // Optional: persist ledger
-        // fs.writeFileSync(path.join(this.storageDir, 'ledgers.json'), JSON.stringify([...this.charLedgers.values()]));
+        const ledger = this.charLedgers.get(filePath);
+        if (!ledger) {
+            console.warn('[MetadataManager] No ledger for changed doc:', filePath);
+            return;
+        }
+
+        // Process changes in reverse order to maintain correct offsets
+        const sortedChanges = [...changes].sort((a, b) => b.rangeOffset - a.rangeOffset);
+
+        for (const change of sortedChanges) {
+            const { rangeOffset, rangeLength, text } = change;
+
+            // Delete the old chars
+            if (rangeLength > 0) {
+                ledger.chars.splice(rangeOffset, rangeLength);
+            }
+
+            // Insert new chars
+            if (text.length > 0) {
+                const newChars: CharRecord[] = [];
+                for (const ch of text) {
+                    newChars.push({
+                        id: uuid(),
+                        ch,
+                        isDebug
+                    });
+                }
+                ledger.chars.splice(rangeOffset, 0, ...newChars);
+            }
+        }
+
+        // Queue async save
+        this.queueSave(filePath);
+
+        console.log(`[MetadataManager] Updated ledger for ${path.basename(filePath)}, now ${ledger.chars.length} chars`);
     }
 
     /**
-     * Build debug highlight segments from the current ledger (continuous offsets).
+     * Build text from ledger, optionally filtering by debug mode
+     */
+    public buildTextFromLedger(filePath: string, includeDebug: boolean): string | null {
+        const ledger = this.charLedgers.get(filePath);
+        if (!ledger) return null;
+
+        const parts: string[] = [];
+        for (const c of ledger.chars) {
+            if (!includeDebug && c.isDebug) continue;
+            parts.push(c.ch);
+        }
+        return parts.join('');
+    }
+
+	// public rebuildTextFromLedger(filePath: string): string | null {
+	// 	const ledger = this.charLedgers.get(filePath);
+	// 	if (!ledger) return null;
+	// 	return ledger.chars.filter(c => !c.isDeleted).sort((a, b) => a.offset - b.offset).map(c => c.ch).join('');
+	// }
+
+	// public buildLedgerFromText(filePath: string): void {
+	// 	//Get the text from the file with the filePath
+	// 	const fileUri = vscode.Uri.file(filePath);
+	// 	vscode.workspace.fs.readFile(fileUri).then((data) => {
+	// 		const text = data.toString();
+	// 		const chars: CharRecord[] = [];
+	// 		for (let i = 0; i < text.length; i++) {
+	// 			const ch = text.charAt(i);
+	// 			const id = uuid();
+	// 			chars.push({ id, ch, offset: i, isDeleted: false, isDebug: false });
+	// 		}
+	// 		const ledger: FileCharLedger = { filePath, chars };
+	// 		this.charLedgers.set(filePath, ledger);
+	// 	});
+	// }
+
+    /**
+     * Get debug segments (ranges of debug-only code) for highlighting
      */
     public getDebugSegmentsForDocument(doc: vscode.TextDocument): DebugSegment[] {
-        const ledger = this.charLedgers.get(doc.uri.fsPath);
+        const filePath = doc.uri.fsPath;
+        const ledger = this.charLedgers.get(filePath);
         if (!ledger) return [];
 
         const segments: DebugSegment[] = [];
-        let inSeg = false;
-        let segStart = 0;
+        let offset = 0;
+        let segStart: number | null = null;
 
-        // chars are not guaranteed to be sorted by array index, so iterate by offset order
-        const visible = ledger.chars.filter(c => !c.isDeleted).sort((a, b) => a.offset - b.offset);
-        for (const c of visible) {
+        for (const c of ledger.chars) {
             if (c.isDebug) {
-                if (!inSeg) {
-                    inSeg = true;
-                    segStart = c.offset;
-                }
+                if (segStart === null) segStart = offset;
             } else {
-                if (inSeg) {
-                    segments.push({ start: segStart, end: c.offset });
-                    inSeg = false;
+                if (segStart !== null) {
+                    segments.push({ start: segStart, end: offset });
+                    segStart = null;
                 }
             }
+            offset += c.ch.length;
         }
-        if (inSeg) {
-            const last = visible[visible.length - 1];
-            segments.push({ start: segStart, end: (last?.offset ?? 0) + 1 });
+
+        if (segStart !== null) {
+            segments.push({ start: segStart, end: offset });
         }
+
         return segments;
+    }
+
+    /**
+     * Queue a save operation (debounced to avoid excessive disk writes)
+     */
+    private queueSave(filePath: string): void {
+        this.saveQueue.add(filePath);
+
+        if (this.saveTimeout) {
+            clearTimeout(this.saveTimeout);
+        }
+
+        this.saveTimeout = setTimeout(() => {
+            this.flushSaves();
+        }, 500); // Save after 500ms of inactivity
+    }
+
+    /**
+     * Flush all pending saves to disk
+     */
+    private async flushSaves(): Promise<void> {
+        const toSave = [...this.saveQueue];
+        this.saveQueue.clear();
+
+        for (const filePath of toSave) {
+            await this.saveLedgerToDisk(filePath);
+        }
+    }
+
+    /**
+     * Save a single ledger to disk
+     */
+    private async saveLedgerToDisk(filePath: string): Promise<void> {
+        const ledger = this.charLedgers.get(filePath);
+        if (!ledger) return;
+
+        const metaDir = this.getMetadataDir(filePath);
+        const metaPath = this.getMetadataPath(filePath);
+
+        try {
+            // Ensure directory exists
+            if (!fs.existsSync(metaDir)) {
+                fs.mkdirSync(metaDir, { recursive: true });
+            }
+
+            // Write JSON
+            const json = JSON.stringify(ledger, null, 2);
+            fs.writeFileSync(metaPath, json, 'utf-8');
+
+            console.log('[MetadataManager] Saved ledger:', metaPath);
+        } catch (err) {
+            console.error('[MetadataManager] Failed to save ledger:', err);
+        }
     }
 
 
 	public dispose(): void {
-		console.log('[hidden-overlay][MetadataManager] dispose()');
-		// optional: flush caches to disk on deactivate
+		console.log('[MetadataManager] dispose()');
+        if (this.saveTimeout) {
+            clearTimeout(this.saveTimeout);
+        }
+        // Final flush
+        this.flushSaves();
 	}
 
-	// Temporary sample ledger generator (for demo purposes)
-	public seedLedgerForFile(filePath: string): void {
-		console.log('[hidden-overlay][MetadataManager] seeding fake ledger for', filePath);
+    /**
+     * For demo purposes—seed a fake ledger with some debug chars
+     */
+    public seedLedgerForFile(filePath: string): void {
+        const ledger = this.charLedgers.get(filePath);
+        if (!ledger) return;
 
-		// You can replace this with a real parse later.
-		const fakeChars = [
-			{ id: uuid(), ch: 'c', offset: 0, isDeleted: false, isDebug: false },
-			{ id: uuid(), ch: 'o', offset: 1, isDeleted: false, isDebug: false },
-			{ id: uuid(), ch: 'n', offset: 2, isDeleted: false, isDebug: false },
-			{ id: uuid(), ch: 's', offset: 3, isDeleted: false, isDebug: false },
-			{ id: uuid(), ch: 'o', offset: 4, isDeleted: false, isDebug: false },
-			{ id: uuid(), ch: 'l', offset: 5, isDeleted: false, isDebug: false },
-			{ id: uuid(), ch: 'e', offset: 6, isDeleted: false, isDebug: false },
-			{ id: uuid(), ch: '.', offset: 7, isDeleted: false, isDebug: false },
-			{ id: uuid(), ch: 'l', offset: 8, isDeleted: false, isDebug: false },
-			{ id: uuid(), ch: 'o', offset: 9, isDeleted: false, isDebug: false },
-			{ id: uuid(), ch: 'g', offset: 10, isDeleted: false, isDebug: false },
-			{ id: uuid(), ch: '(', offset: 11, isDeleted: false, isDebug: false },
-			{ id: uuid(), ch: '"', offset: 12, isDeleted: false, isDebug: false },
-			{ id: uuid(), ch: 'd', offset: 13, isDeleted: false, isDebug: true }, // ← debug-only chars
-			{ id: uuid(), ch: 'e', offset: 14, isDeleted: false, isDebug: true },
-			{ id: uuid(), ch: 'b', offset: 15, isDeleted: false, isDebug: true },
-			{ id: uuid(), ch: 'u', offset: 16, isDeleted: false, isDebug: true },
-			{ id: uuid(), ch: 'g', offset: 17, isDeleted: false, isDebug: true },
-			{ id: uuid(), ch: '"', offset: 18, isDeleted: false, isDebug: false },
-			{ id: uuid(), ch: ')', offset: 19, isDeleted: false, isDebug: false },
-			{ id: uuid(), ch: ';', offset: 20, isDeleted: false, isDebug: false }
-		];
+        // Mark some chars as debug (e.g., chars 10-20)
+        for (let i = 10; i < Math.min(20, ledger.chars.length); i++) {
+            ledger.chars[i].isDebug = true;
+        }
 
-		const ledger = {
-			filePath,
-			chars: fakeChars
-		};
-		this.charLedgers.set(filePath, ledger);
-	}
+        this.queueSave(filePath);
+        console.log('[MetadataManager] Seeded debug chars in:', filePath);
+    }
+
+	// // Temporary sample ledger generator (for demo purposes)
+	// public seedLedgerForFile(filePath: string): void {
+	// 	console.log('[hidden-overlay][MetadataManager] seeding fake ledger for', filePath);
+
+	// 	// You can replace this with a real parse later.
+	// 	const fakeChars = [
+	// 		{ id: uuid(), ch: 'c', offset: 0, isDeleted: false, isDebug: false },
+	// 		{ id: uuid(), ch: 'o', offset: 1, isDeleted: false, isDebug: false },
+	// 		{ id: uuid(), ch: 'n', offset: 2, isDeleted: false, isDebug: false },
+	// 		{ id: uuid(), ch: 's', offset: 3, isDeleted: false, isDebug: false },
+	// 		{ id: uuid(), ch: 'o', offset: 4, isDeleted: false, isDebug: false },
+	// 		{ id: uuid(), ch: 'l', offset: 5, isDeleted: false, isDebug: false },
+	// 		{ id: uuid(), ch: 'e', offset: 6, isDeleted: false, isDebug: false },
+	// 		{ id: uuid(), ch: '.', offset: 7, isDeleted: false, isDebug: false },
+	// 		{ id: uuid(), ch: 'l', offset: 8, isDeleted: false, isDebug: false },
+	// 		{ id: uuid(), ch: 'o', offset: 9, isDeleted: false, isDebug: false },
+	// 		{ id: uuid(), ch: 'g', offset: 10, isDeleted: false, isDebug: false },
+	// 		{ id: uuid(), ch: '(', offset: 11, isDeleted: false, isDebug: false },
+	// 		{ id: uuid(), ch: '"', offset: 12, isDeleted: false, isDebug: false },
+	// 		{ id: uuid(), ch: 'd', offset: 13, isDeleted: false, isDebug: true }, // ← debug-only chars
+	// 		{ id: uuid(), ch: 'e', offset: 14, isDeleted: false, isDebug: true },
+	// 		{ id: uuid(), ch: 'b', offset: 15, isDeleted: false, isDebug: true },
+	// 		{ id: uuid(), ch: 'u', offset: 16, isDeleted: false, isDebug: true },
+	// 		{ id: uuid(), ch: 'g', offset: 17, isDeleted: false, isDebug: true },
+	// 		{ id: uuid(), ch: '"', offset: 18, isDeleted: false, isDebug: false },
+	// 		{ id: uuid(), ch: ')', offset: 19, isDeleted: false, isDebug: false },
+	// 		{ id: uuid(), ch: ';', offset: 20, isDeleted: false, isDebug: false }
+	// 	];
+
+	// 	const ledger = {
+	// 		filePath,
+	// 		chars: fakeChars
+	// 	};
+	// 	this.charLedgers.set(filePath, ledger);
+	// }
 
 }
