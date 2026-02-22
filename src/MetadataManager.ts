@@ -102,6 +102,13 @@ export class MetadataManager {
     }
 
     /**
+     * Get all file paths that have ledgers loaded
+     */
+    public getTrackedFilePaths(): string[] {
+        return Array.from(this.charLedgers.keys());
+    }
+
+    /**
      * Ensure a ledger exists for this document.
      * - If metadata file exists on disk, load it and overwrite the source file
      * - If not, create ledger from current file content (all chars are debug=false)
@@ -186,6 +193,90 @@ export class MetadataManager {
                 this.isApplyingEdit = false;
             }
         }
+    }
+
+    /**
+     * Rebuild a file from its ledger and save to disk.
+     * Used when toggling debug mode for files that may not be open.
+     */
+    public async rebuildAndSaveFile(filePath: string, includeDebug: boolean): Promise<void> {
+        const ledger = this.charLedgers.get(filePath);
+        if (!ledger) {
+            console.warn('[MetadataManager] No ledger for:', filePath);
+            return;
+        }
+
+        const newText = this.buildTextFromLedger(filePath, includeDebug);
+        if (newText === null) {
+            console.warn('[MetadataManager] Failed to build text for:', filePath);
+            return;
+        }
+
+        // Check if file is open in an editor
+        const openDoc = vscode.workspace.textDocuments.find(d => d.uri.fsPath === filePath);
+
+        if (openDoc) {
+            // File is open - use applyEditWithoutTracking to update editor
+            const fullRange = new vscode.Range(
+                openDoc.positionAt(0),
+                openDoc.positionAt(openDoc.getText().length)
+            );
+            
+            this.isApplyingEdit = true;
+            try {
+                const edit = new vscode.WorkspaceEdit();
+                edit.replace(openDoc.uri, fullRange, newText);
+                await vscode.workspace.applyEdit(edit);
+                await openDoc.save();
+                console.log('[MetadataManager] Updated and saved open file:', filePath);
+            } finally {
+                this.isApplyingEdit = false;
+            }
+        } else {
+            // File is not open - write directly to disk
+            const fs = await import('fs');
+            fs.writeFileSync(filePath, newText, 'utf-8');
+            console.log('[MetadataManager] Wrote closed file to disk:', filePath);
+        }
+    }
+
+    /**
+     * Scan workspace for all files and ensure ledgers exist.
+     * Call this on startup or when toggling to ensure all files are tracked.
+     */
+    public async scanWorkspaceForFiles(): Promise<void> {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders) return;
+
+        for (const folder of workspaceFolders) {
+            // Find all files, excluding common non-source directories
+            const pattern = new vscode.RelativePattern(folder, '**/*');
+            const files = await vscode.workspace.findFiles(pattern, '**/node_modules/**');
+
+            for (const fileUri of files) {
+                const filePath = fileUri.fsPath;
+                
+                if (!this.shouldTrackFile(filePath)) continue;
+                
+                // Skip directories and non-text files
+                const fs = await import('fs');
+                const stat = fs.statSync(filePath);
+                if (stat.isDirectory()) continue;
+
+                // Skip if already loaded
+                if (this.charLedgers.has(filePath)) continue;
+
+                // Check if metadata exists
+                const metaPath = this.getMetadataPath(filePath);
+                if (fs.existsSync(metaPath)) {
+                    // Load existing ledger
+                    await this.loadLedgerFromDisk(filePath, metaPath);
+                }
+                // Note: We don't create new ledgers here - only for files that already have metadata
+            }
+        }
+
+        console.log(`[MetadataManager] Scanned workspace, tracking ${this.charLedgers.size} files`);
     }
 
     /**

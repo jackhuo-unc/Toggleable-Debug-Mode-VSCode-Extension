@@ -93,8 +93,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
 
 	// Perform any async initialization that needs to happen after wiring
-	// await trackerManager.init();
 	await metadataManager.init();
+
+	// Scan workspace for existing metadata files
+    await metadataManager.scanWorkspaceForFiles();
+
 	await overlayManager.init();
 	uiManager.initStatusBar();
 
