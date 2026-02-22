@@ -321,6 +321,82 @@ export class MetadataManager {
         return this.charLedgers.get(filePath);
     }
 
+    /**
+     * Convert a visible offset to a ledger index.
+     * In debugOff mode, we skip debug chars when counting.
+     * 
+     * @param filePath - The file path
+     * @param visibleOffset - The offset in the visible text (what VS Code reports)
+     * @param isDebugMode - Whether we're in debugOn mode
+     * @returns The corresponding index in the ledger array
+     */
+    private visibleOffsetToLedgerIndex(
+        filePath: string,
+        visibleOffset: number,
+        isDebugMode: boolean
+    ): number {
+        const ledger = this.charLedgers.get(filePath);
+        if (!ledger) return visibleOffset;
+
+        // In debugOn mode, all chars are visible, so offset === index
+        if (isDebugMode) {
+            return visibleOffset;
+        }
+
+        // In debugOff mode, we need to skip debug chars
+        let visibleCount = 0;
+        let ledgerIndex = 0;
+
+        while (ledgerIndex < ledger.chars.length && visibleCount < visibleOffset) {
+            if (!ledger.chars[ledgerIndex].isDebug) {
+                visibleCount++;
+            }
+            ledgerIndex++;
+        }
+
+        return ledgerIndex;
+    }
+
+    /**
+     * Count how many ledger entries correspond to a given visible length.
+     * In debugOff mode, we skip debug chars.
+     * 
+     * @param filePath - The file path
+     * @param startIndex - Starting index in the ledger
+     * @param visibleLength - Number of visible chars to count
+     * @param isDebugMode - Whether we're in debugOn mode
+     * @returns Number of ledger entries that span this visible length
+     */
+    private countLedgerCharsForVisibleLength(
+        filePath: string,
+        startIndex: number,
+        visibleLength: number,
+        isDebugMode: boolean
+    ): number {
+        const ledger = this.charLedgers.get(filePath);
+        if (!ledger) return visibleLength;
+
+        // In debugOn mode, all chars are visible
+        if (isDebugMode) {
+            return visibleLength;
+        }
+
+        // In debugOff mode, count ledger entries until we've covered visibleLength visible chars
+        let visibleCount = 0;
+        let ledgerCount = 0;
+        let index = startIndex;
+
+        while (index < ledger.chars.length && visibleCount < visibleLength) {
+            if (!ledger.chars[index].isDebug) {
+                visibleCount++;
+            }
+            ledgerCount++;
+            index++;
+        }
+
+        return ledgerCount;
+    }
+
 	/**
      * Handle VS Code document changes and update the ledger accordingly
      */
@@ -344,15 +420,33 @@ export class MetadataManager {
             return;
         }
 
+        const currentMode = this.context.workspaceState.get<string>('hiddenOverlay.debugMode') ?? 'debugOff';
+        const isDebugMode = currentMode === 'debugOn';
+
         // Process changes in reverse order to maintain correct offsets
         const sortedChanges = [...changes].sort((a, b) => b.rangeOffset - a.rangeOffset);
 
         for (const change of sortedChanges) {
             const { rangeOffset, rangeLength, text } = change;
 
-            // Delete the old chars
+            // Convert visible offset to ledger index
+            const ledgerStartIndex = this.visibleOffsetToLedgerIndex(filePath, rangeOffset, isDebugMode);
+
+            // For deletion, we need to figure out how many ledger entries to remove
+            // This is tricky: rangeLength is in visible chars, but we need to count ledger entries
+            let deleteCount = 0;
             if (rangeLength > 0) {
-                ledger.chars.splice(rangeOffset, rangeLength);
+                deleteCount = this.countLedgerCharsForVisibleLength(
+                    filePath,
+                    ledgerStartIndex,
+                    rangeLength,
+                    isDebugMode
+                );
+            }
+
+            // Delete the old chars
+            if (deleteCount > 0) {
+                ledger.chars.splice(ledgerStartIndex, deleteCount);
             }
 
             // Insert new chars
@@ -365,7 +459,7 @@ export class MetadataManager {
                         isDebug
                     });
                 }
-                ledger.chars.splice(rangeOffset, 0, ...newChars);
+                ledger.chars.splice(ledgerStartIndex, 0, ...newChars);
             }
         }
 
@@ -428,13 +522,16 @@ export class MetadataManager {
 	// }
 
     /**
-     * Get debug segments (ranges of debug-only code) for highlighting
+     * Get debug segments (ranges of debug-only code) for highlighting.
+     * Returns offsets in the VISIBLE text (for use with VS Code ranges).
      */
     public getDebugSegmentsForDocument(doc: vscode.TextDocument): DebugSegment[] {
         const filePath = doc.uri.fsPath;
         const ledger = this.charLedgers.get(filePath);
         if (!ledger) return [];
 
+        // Debug segments are only visible/meaningful in debugOn mode
+        // In that mode, all chars are visible, so we can count directly
         const segments: DebugSegment[] = [];
         let offset = 0;
         let segStart: number | null = null;
@@ -451,6 +548,7 @@ export class MetadataManager {
             offset += c.ch.length;
         }
 
+        // Close final segment if needed
         if (segStart !== null) {
             segments.push({ start: segStart, end: offset });
         }
