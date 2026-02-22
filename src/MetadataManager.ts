@@ -299,6 +299,21 @@ export class MetadataManager {
         return parts.join('');
     }
 
+    public async applyEditWithoutTracking(
+        uri: vscode.Uri,
+        range: vscode.Range,
+        newText: string
+    ): Promise<void> {
+        this.isApplyingEdit = true;
+        try {
+            const edit = new vscode.WorkspaceEdit();
+            edit.replace(uri, range, newText);
+            await vscode.workspace.applyEdit(edit);
+        } finally {
+            this.isApplyingEdit = false;
+        }
+    }
+
 	// public rebuildTextFromLedger(filePath: string): string | null {
 	// 	const ledger = this.charLedgers.get(filePath);
 	// 	if (!ledger) return null;
