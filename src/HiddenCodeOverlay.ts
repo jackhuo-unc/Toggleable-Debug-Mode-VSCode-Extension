@@ -158,7 +158,7 @@ export class HiddenCodeOverlay {
         }
     }
 
-	private updateHighlightsForEditor(editor: vscode.TextEditor): void {
+	public updateHighlightsForEditor(editor: vscode.TextEditor): void {
         if (!this.debugCharDecoration) return;
 
         const showDebug = this.debugMode === 'debugOn';

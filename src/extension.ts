@@ -125,6 +125,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		await metadataManager?.ensureLedgerForDoc(document);
 	}
 
+	// 7. Update highlights when user switches between editor tabs
+    context.subscriptions.push(
+        vscode.window.onDidChangeActiveTextEditor((editor) => {
+            if (editor) {
+                overlayManager?.updateHighlightsForEditor(editor);
+            }
+        })
+    );
+
+	// 8. Update highlights when visible editors change (e.g., split view)
+    context.subscriptions.push(
+        vscode.window.onDidChangeVisibleTextEditors((editors) => {
+            for (const editor of editors) {
+                overlayManager?.updateHighlightsForEditor(editor);
+            }
+        })
+    );
+
 	console.log('[debug-toggle] activate() complete');
 
 	// Save all static info in path in local machine
