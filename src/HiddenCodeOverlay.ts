@@ -9,11 +9,13 @@ import * as vscode from 'vscode';
 import { MetadataManager } from './MetadataManager';
 
 export type DebugMode = 'debugOn' | 'debugOff';
+export type InsertMode = 'insertDebug' | 'insertNormal';
 
 export class HiddenCodeOverlay {
 	private readonly context: vscode.ExtensionContext;
 	private metadataManager: MetadataManager;
 	private debugMode: DebugMode = 'debugOff';
+	private insertMode: InsertMode = 'insertNormal';
 	private debugCharDecoration: vscode.TextEditorDecorationType | null = null;
 
 	constructor(context: vscode.ExtensionContext, metadataManager: MetadataManager) {
@@ -24,12 +26,26 @@ export class HiddenCodeOverlay {
 
 	public async init(): Promise<void> {
 		console.log('[HiddenCodeOverlay] init()');
-		// TODO: load last-known mode from workspaceState/globalState if you want persistence
-		const saved = this.context.workspaceState.get<DebugMode>('hiddenOverlay.debugMode');
-		if (saved === 'debugOn' || saved === 'debugOff') {
-			this.debugMode = saved;
-		}
+
+		// Restore debug mode
+        const savedDebugMode = this.context.workspaceState.get<DebugMode>('hiddenOverlay.debugMode');
+        if (savedDebugMode === 'debugOn' || savedDebugMode === 'debugOff') {
+            this.debugMode = savedDebugMode;
+        }
+
+		// Restore insert mode
+        const savedInsertMode = this.context.workspaceState.get<InsertMode>('hiddenOverlay.insertMode');
+        if (savedInsertMode === 'insertDebug' || savedInsertMode === 'insertNormal') {
+            this.insertMode = savedInsertMode;
+        }
+
+		// If we're in debugOff mode, force insertNormal
+        if (this.debugMode === 'debugOff') {
+            this.insertMode = 'insertNormal';
+        }
+
 		console.log('[HiddenCodeOverlay] initial mode =', this.debugMode);
+		console.log('[HiddenCodeOverlay] initial insertMode =', this.insertMode);
 
 		this.debugCharDecoration = vscode.window.createTextEditorDecorationType({
             backgroundColor: 'rgba(255, 215, 0, 0.25)', // golden highlight
@@ -43,9 +59,29 @@ export class HiddenCodeOverlay {
 		return this.debugMode;
 	}
 
+	public getInsertMode(): InsertMode {
+		return this.insertMode;
+	}
+
+	/**
+     * Returns true if newly inserted chars should be marked as debug
+     */
+    public shouldInsertAsDebug(): boolean {
+        // Only insert as debug if BOTH conditions are met:
+        // 1. We're in debugOn mode (can see debug code)
+        // 2. Insert mode is set to insertDebug
+        return this.debugMode === 'debugOn' && this.insertMode === 'insertDebug';
+    }
+
 	public async toggleDebugMode(): Promise<void> {
 		this.debugMode = this.debugMode === 'debugOn' ? 'debugOff' : 'debugOn';
 		console.log('[HiddenCodeOverlay] toggleDebugMode ->', this.debugMode);
+
+		// When switching to debugOff, force insert mode to normal
+        if (this.debugMode === 'debugOff') {
+            this.insertMode = 'insertNormal';
+            await this.context.workspaceState.update('hiddenOverlay.insertMode', this.insertMode);
+        }
 
 		//persist mode
 		await this.context.workspaceState.update('hiddenOverlay.debugMode', this.debugMode);
@@ -57,7 +93,7 @@ export class HiddenCodeOverlay {
                 title: `Switching to ${this.debugMode === 'debugOn' ? 'Debug ON' : 'Debug OFF'} mode...`,
                 cancellable: false
             },
-            async (progress) => {
+            async () => {
                 // Apply changes to ALL tracked files in workspace
                 await this.applyDebugViewToAllFiles();
                 
@@ -74,6 +110,26 @@ export class HiddenCodeOverlay {
 		// await this.applyDebugViewToAllEditors();
 	}
 
+	public async toggleInsertMode(): Promise<void> {
+		// Only allow toggling insert mode when in debugOn mode
+		if (this.debugMode === 'debugOff') {
+            vscode.window.showWarningMessage(
+                'Insert mode can only be changed while in Debug ON mode'
+            );
+            return;
+        }
+
+		this.insertMode = this.insertMode === 'insertDebug' ? 'insertNormal' : 'insertDebug';
+        console.log('[HiddenCodeOverlay] toggleInsertMode ->', this.insertMode);
+
+        // Persist mode
+        await this.context.workspaceState.update('hiddenOverlay.insertMode', this.insertMode);
+
+        vscode.window.showInformationMessage(
+            `Insert mode: ${this.insertMode === 'insertDebug' ? 'DEBUG CODE' : 'NORMAL CODE'}`
+        );
+
+	}
 	/**
      * Apply the debug view to ALL tracked files in the workspace
      */
@@ -90,12 +146,6 @@ export class HiddenCodeOverlay {
         console.log('[HiddenCodeOverlay] Finished applying debug view to all files');
     }
 
-	// private async applyDebugViewToAllEditors(): Promise<void> {
-	// 	for (const editor of vscode.window.visibleTextEditors) {
-	// 		await this.applyDebugViewToEditor(editor);
-	// 	}
-	// }
-
 	/**
      * Update highlights for all visible editors
      */
@@ -104,43 +154,6 @@ export class HiddenCodeOverlay {
             this.updateHighlightsForEditor(editor);
         }
     }
-
-	// private async applyDebugViewToEditor(editor: vscode.TextEditor): Promise<void> {
-	// 	const filePath = editor.document.uri.fsPath;
-	// 	console.log('[HiddenCodeOverlay] applying view to editor for', filePath);
-
-	// 	const ledger = this.metadataManager.getCharLedgerForFile(filePath);
-	// 	if (!ledger) {
-	// 		console.warn('[HiddenCodeOverlay] no ledger found for', filePath);
-	// 		return;
-	// 	}
-
-	// 	const showDebug = this.debugMode === 'debugOn';
-
-	// 	// Build the visible text from ledger
-    //     const newText = this.metadataManager.buildTextFromLedger(filePath, showDebug);
-    //     if (newText === null) {
-    //         console.warn('[HiddenCodeOverlay] failed to build text for:', filePath);
-    //         return;
-    //     }
-
-	// 	// Replace entire document with the mode-specific text
-    //     const currentText = editor.document.getText();
-    //     if (currentText !== newText) {
-    //         const fullRange = new vscode.Range(
-    //             editor.document.positionAt(0),
-    //             editor.document.positionAt(currentText.length)
-    //         );
-
-    //         // Use MetadataManager's apply method to avoid ledger updates
-    //         await this.metadataManager.applyEditWithoutTracking(editor.document.uri, fullRange, newText);
-    //     }
-
-	// 	// Update decorations
-    //     this.updateHighlightsForEditor(editor);
-
-    //     console.log(`[HiddenCodeOverlay] Applied debugMode=${this.debugMode} view to ${filePath}`);
-	// }
 
 	public clearHighlights(): void {
         if (!this.debugCharDecoration) return;

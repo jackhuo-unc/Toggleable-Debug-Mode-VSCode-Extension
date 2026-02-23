@@ -92,6 +92,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         })
     );
 
+	context.subscriptions.push(
+        vscode.commands.registerCommand('hiddenOverlay.toggleInsertMode', async () => {
+            await overlayManager?.toggleInsertMode();
+            uiManager?.updateStatusBar();
+        })
+    );
+
 	// Perform any async initialization that needs to happen after wiring
 	await metadataManager.init();
 
@@ -101,13 +108,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	await overlayManager.init();
 	uiManager.initStatusBar();
 
+	// Apply highlights to currently active editor on startup
+    if (vscode.window.activeTextEditor) {
+        overlayManager.updateHighlightsForEditor(vscode.window.activeTextEditor);
+    }
+
 	console.log('[debug-toggle] activate() finished');
 
 	//5. Wire up edit interceptions
 	context.subscriptions.push(
 		vscode.workspace.onDidChangeTextDocument((event) => {
 			if (event.contentChanges.length === 0) return;
-			const isDebug = overlayManager?.getMode() === 'debugOn';
+			const isDebug = overlayManager?.shouldInsertAsDebug() ?? false;
 			metadataManager?.handleTextDocumentChange(event.document, event.contentChanges, isDebug);
 			overlayManager?.updateHighlightsForDocument(event.document);
 		})

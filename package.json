@@ -22,7 +22,12 @@
 			},
 			{
 				"command": "hiddenOverlay.toggleDebugMode",
-				"title": "Toggle Debug Overlay",
+				"title": "Toggle Debug Overlay (Show/Hide Debug Code)",
+				"category": "Hidden Overlay"
+			},
+			{
+				"command": "hiddenOverlay.toggleInsertMode",
+				"title": "Toggle Insert Mode (Switch Between Debug/Normal Code)",
 				"category": "Hidden Overlay"
 			}
 		]
