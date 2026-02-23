@@ -261,7 +261,7 @@ export class UndoRedoManager {
         this.overlayManager.updateHighlightsForEditor(editor);
 
         // Save ledger to disk
-        this.metadataManager.queueSavePublic(ledger.filePath);
+        this.metadataManager.queueSavePublic(ledger.relativePath);
     }
 
     /**
@@ -281,7 +281,6 @@ export class UndoRedoManager {
      */
     private deepCopyChars(chars: CharRecord[]): CharRecord[] {
         return chars.map(c => ({
-            id: c.id,
             ch: c.ch,
             isDebug: c.isDebug
         }));

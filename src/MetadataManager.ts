@@ -10,13 +10,12 @@ import * as fs from 'fs';
 import { v4 as uuid } from 'uuid';
 
 export interface CharRecord {
-	id: string;
 	ch: string;
 	isDebug: boolean;
 }
 
 export interface FileCharLedger {
-    filePath: string;
+    relativePath: string;
     chars: CharRecord[]; 
 }
 
@@ -48,7 +47,7 @@ export class MetadataManager {
     // Flag to prevent infinite loops when we programmatically edit files
     private isApplyingEdit: boolean = false;
 
-	private readonly storageDir: string;
+	private rootDir: string | null = null;
 
 	// in-memory caches
 	// private charLedgers: Map<string, FileCharLedger> = new Map();
@@ -70,34 +69,85 @@ export class MetadataManager {
 
 	public async init(): Promise<void> {
 		console.log('[MetadataManager] init()');
-		// await this.ensureStorageDir();
-
-		// TODO: load existing ledgers, deltas, and changelog from disk if present.
-		// this.charLedgers = ...
-		// this.modeDeltas = ...
-		// this.changeLog = ...
+        this.rootDir = await this.findRootDir();
 	}
 
-    //Get the __debuggable__ folder path for a given file
-    private getMetadataDir(filePath: string): string {
-        const dir = path.dirname(filePath);
-        return path.join(dir, '__debuggable__');
+    /**
+     * Find the root directory for relative paths.
+     * Prefers git root, falls back to workspace root.
+     */
+    private async findRootDir(): Promise<string | null> {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders || workspaceFolders.length === 0) {
+            return null;
+        }
+
+        const workspaceRoot = workspaceFolders[0].uri.fsPath;
+
+        // Try to find .git directory by walking up from workspace root
+        let currentDir = workspaceRoot;
+        while (currentDir !== path.dirname(currentDir)) { // stop at filesystem root
+            const gitDir = path.join(currentDir, '.git');
+            if (fs.existsSync(gitDir)) {
+                console.log('[MetadataManager] Found git root:', currentDir);
+                return currentDir;
+            }
+            currentDir = path.dirname(currentDir);
+        }
+
+        // No git repo found, use workspace root
+        console.log('[MetadataManager] No git root found, using workspace root:', workspaceRoot);
+        return workspaceRoot;
     }
 
-    //Get the metadata JSON file path for a given source file
-    private getMetadataPath(filePath: string): string {
-        const metaDir = this.getMetadataDir(filePath);
-        const baseName = path.basename(filePath);
+    /**
+     * Convert absolute path to relative path from root
+     */
+    private toRelativePath(absolutePath: string): string | null {
+        if (!this.rootDir) return null;
+        return path.relative(this.rootDir, absolutePath);
+    }
+
+    /**
+     * Convert relative path to absolute path
+     */
+    private toAbsolutePath(relativePath: string): string | null {
+        if (!this.rootDir) return null;
+        return path.join(this.rootDir, relativePath);
+    }
+
+    // Get the __debuggable__ folder path for a given file (using relative structure)
+    private getMetadataDir(absolutePath: string): string | null {
+        const relativePath = this.toRelativePath(absolutePath);
+        if (!relativePath || !this.rootDir) return null;
+
+        const relativeDir = path.dirname(relativePath);
+        return path.join(this.rootDir, relativeDir, '__debuggable__');
+    }
+
+    // Get the metadata JSON file path for a given source file
+    private getMetadataPath(absolutePath: string): string | null {
+        const metaDir = this.getMetadataDir(absolutePath);
+        if (!metaDir) return null;
+
+        const baseName = path.basename(absolutePath);
         return path.join(metaDir, `${baseName}.json`);
     }
 
     //Check if a file should be tracked (exclude metadata files, config, etc.)
     private shouldTrackFile(filePath: string): boolean {
+        if (!filePath || filePath.length === 0) return false;
+        if (!path.isAbsolute(filePath)) return false;
         if (filePath.includes('__debuggable__')) return false;
         if (filePath.includes('VSCODE-config')) return false;
+        if (filePath.includes('.vscode')) return false;
         if (filePath.includes('node_modules')) return false;
         if (filePath.endsWith('.git')) return false;
         if (filePath.includes(path.sep + 'log' + path.sep)) return false;
+
+        // Ensure file is within our root directory
+        if (this.rootDir && !filePath.startsWith(this.rootDir)) return false;
+
         return true;
     }
 
@@ -114,6 +164,10 @@ export class MetadataManager {
      * - If not, create ledger from current file content (all chars are debug=false)
      */
     public async ensureLedgerForDoc(doc: vscode.TextDocument): Promise<FileCharLedger | null> {
+        if (doc.uri.scheme !== 'file') {
+            return null;
+        }
+
         const filePath = doc.uri.fsPath;
 
         if (!this.shouldTrackFile(filePath)) {
@@ -126,6 +180,10 @@ export class MetadataManager {
         }
 
         const metaPath = this.getMetadataPath(filePath);
+        if (!metaPath) {
+            console.warn('[MetadataManager] Could not determine metadata path for:', filePath);
+            return null;
+        }
 
         if (fs.existsSync(metaPath)) {
             // Load from metadata file (source of truth)
@@ -141,12 +199,13 @@ export class MetadataManager {
        /**
      * Load ledger from disk and sync to source file
      */
-    private async loadLedgerFromDisk(filePath: string, metaPath: string): Promise<FileCharLedger | null> {
+    private async loadLedgerFromDisk(absolutePath: string, metaPath: string): Promise<FileCharLedger | null> {
         try {
             const raw = fs.readFileSync(metaPath, 'utf-8');
             const data = JSON.parse(raw) as FileCharLedger;
 
-            this.charLedgers.set(filePath, data);
+            // Store by absolute path for runtime lookups
+            this.charLedgers.set(absolutePath, data);
 
             // Metadata is canon—rebuild and overwrite source file
             // We do NOT do this immediately to avoid conflicts during init
@@ -157,10 +216,10 @@ export class MetadataManager {
             const rebuiltText = this.buildTextFromLedgerData(data, includeDebug);
 
             if (rebuiltText !== null) {
-                fs.writeFileSync(filePath, rebuiltText, 'utf-8');
-                console.log('[MetadataManager] Overwrote source file from metadata:', filePath);
+                fs.writeFileSync(absolutePath, rebuiltText, 'utf-8');
+                console.log('[MetadataManager] Overwrote source file from metadata:', absolutePath);
 
-                await this.refreshEditorForFile(filePath, rebuiltText);
+                await this.refreshEditorForFile(absolutePath, rebuiltText);
             }
 
             return data;
@@ -245,6 +304,8 @@ export class MetadataManager {
      * Call this on startup or when toggling to ensure all files are tracked.
      */
     public async scanWorkspaceForFiles(): Promise<void> {
+        if (!this.rootDir) return;
+
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders) return;
 
@@ -268,7 +329,7 @@ export class MetadataManager {
 
                 // Check if metadata exists
                 const metaPath = this.getMetadataPath(filePath);
-                if (fs.existsSync(metaPath)) {
+                if (metaPath && fs.existsSync(metaPath)) {
                     // Load existing ledger
                     await this.loadLedgerFromDisk(filePath, metaPath);
                 }
@@ -294,22 +355,26 @@ export class MetadataManager {
     /**
      * Create a new ledger from text content
      */
-    private createLedgerFromText(filePath: string, text: string): FileCharLedger {
+    private createLedgerFromText(absolutePath: string, text: string): FileCharLedger {
+        const relativePath = this.toRelativePath(absolutePath);
+        if (!relativePath) {
+            throw new Error(`Cannot create ledger: unable to compute relative path for ${absolutePath}`);
+        }
+
         const chars: CharRecord[] = [];
 
         for (const ch of text) {
             chars.push({
-                id: uuid(),
                 ch,
                 isDebug: false
             });
         }
 
-        const ledger: FileCharLedger = { filePath, chars };
-        this.charLedgers.set(filePath, ledger);
+        const ledger: FileCharLedger = { relativePath, chars };
+        this.charLedgers.set(absolutePath, ledger);
 
         // Save to disk
-        this.queueSave(filePath);
+        this.queueSave(absolutePath);
 
         return ledger;
     }
@@ -408,6 +473,8 @@ export class MetadataManager {
         // Skip if this is our own edit
         if (this.isApplyingEdit) return;
 
+        if (doc.uri.scheme !== 'file') return;
+
         const filePath = doc.uri.fsPath;
 
         if (!this.shouldTrackFile(filePath)) {
@@ -454,7 +521,6 @@ export class MetadataManager {
                 const newChars: CharRecord[] = [];
                 for (const ch of text) {
                     newChars.push({
-                        id: uuid(),
                         ch,
                         isDebug
                     });
@@ -498,28 +564,6 @@ export class MetadataManager {
             this.isApplyingEdit = false;
         }
     }
-
-	// public rebuildTextFromLedger(filePath: string): string | null {
-	// 	const ledger = this.charLedgers.get(filePath);
-	// 	if (!ledger) return null;
-	// 	return ledger.chars.filter(c => !c.isDeleted).sort((a, b) => a.offset - b.offset).map(c => c.ch).join('');
-	// }
-
-	// public buildLedgerFromText(filePath: string): void {
-	// 	//Get the text from the file with the filePath
-	// 	const fileUri = vscode.Uri.file(filePath);
-	// 	vscode.workspace.fs.readFile(fileUri).then((data) => {
-	// 		const text = data.toString();
-	// 		const chars: CharRecord[] = [];
-	// 		for (let i = 0; i < text.length; i++) {
-	// 			const ch = text.charAt(i);
-	// 			const id = uuid();
-	// 			chars.push({ id, ch, offset: i, isDeleted: false, isDebug: false });
-	// 		}
-	// 		const ledger: FileCharLedger = { filePath, chars };
-	// 		this.charLedgers.set(filePath, ledger);
-	// 	});
-	// }
 
     /**
      * Get debug segments (ranges of debug-only code) for highlighting.

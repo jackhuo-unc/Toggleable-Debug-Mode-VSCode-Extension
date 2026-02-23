@@ -211,6 +211,26 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         })
     );
 
+	context.subscriptions.push(
+		vscode.commands.registerCommand('hiddenOverlay.toggleMetadataVisibility', async () => {
+			const config = vscode.workspace.getConfiguration('files');
+            const currentExclude = config.get<Record<string, boolean>>('exclude') ?? {};
+            
+            const isHidden = currentExclude['**/__debuggable__'] === true;
+            
+            const newExclude = {
+                ...currentExclude,
+                '**/__debuggable__': !isHidden
+            };
+
+            await config.update('exclude', newExclude, vscode.ConfigurationTarget.Workspace);
+            
+            vscode.window.showInformationMessage(
+                `Metadata folders are now ${!isHidden ? 'hidden' : 'visible'}`
+            );
+		})
+	);
+
 	console.log('[debug-toggle] activate() complete');
 
 	// Save all static info in path in local machine
