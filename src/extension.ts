@@ -24,11 +24,13 @@ import { TrackerManager } from './TrackerManager';
 import { UIManager } from './UIManager';
 import { HiddenCodeOverlay } from './HiddenCodeOverlay';
 import { MetadataManager } from './MetadataManager';
+import { UndoRedoManager } from './UndoRedoManager';
 // import { error } from 'console';
 
 let trackerManager: TrackerManager | null = null;
 let metadataManager: MetadataManager | null = null;
 let overlayManager: HiddenCodeOverlay | null = null;
+let undoRedoManager: UndoRedoManager | null = null;
 let uiManager: UIManager | null = null;
 
 const axios = require('axios');
@@ -45,6 +47,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	// 1. Initialize metadata / overlay core
 	metadataManager = new MetadataManager(context);
 	overlayManager = new HiddenCodeOverlay(context, metadataManager);
+
+	undoRedoManager = new UndoRedoManager(context, metadataManager, overlayManager);
 
 	// 3. Initialize UI (status bar, webview commands, etc.)
 	uiManager = new UIManager(context, overlayManager);
@@ -105,6 +109,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	// Scan workspace for existing metadata files
     await metadataManager.scanWorkspaceForFiles();
 
+	await undoRedoManager.init();
+
 	await overlayManager.init();
 	uiManager.initStatusBar();
 
@@ -115,10 +121,53 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	console.log('[debug-toggle] activate() finished');
 
+	// 7. Override undo command
+    context.subscriptions.push(
+        vscode.commands.registerCommand('hiddenOverlay.undo', async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) return;
+
+            const handled = await undoRedoManager?.undo(editor);
+            if (!handled) {
+                // Fall back to VS Code's built-in undo
+                await vscode.commands.executeCommand('default:undo');
+            }
+            uiManager?.updateStatusBar();
+            overlayManager?.updateHighlightsForEditor(editor);
+        })
+    );
+
+	// 8. Override redo command
+    context.subscriptions.push(
+        vscode.commands.registerCommand('hiddenOverlay.redo', async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) return;
+
+            const handled = await undoRedoManager?.redo(editor);
+            if (!handled) {
+                // Fall back to VS Code's built-in redo
+                await vscode.commands.executeCommand('default:redo');
+            }
+            uiManager?.updateStatusBar();
+            overlayManager?.updateHighlightsForEditor(editor);
+        })
+    );
+
 	//5. Wire up edit interceptions
 	context.subscriptions.push(
 		vscode.workspace.onDidChangeTextDocument((event) => {
 			if (event.contentChanges.length === 0) return;
+			if (undoRedoManager?.isPerformingUndoRedo()) return;
+
+			const doc = event.document;
+            const editor = vscode.window.activeTextEditor;
+
+			// Record state before edit
+            if (editor && editor.document.uri.toString() === doc.uri.toString()) {
+                const cursorOffset = doc.offsetAt(editor.selection.active);
+                undoRedoManager?.recordBeforeEdit(doc.uri.fsPath, cursorOffset);
+            }
+
 			const isDebug = overlayManager?.shouldInsertAsDebug() ?? false;
 			metadataManager?.handleTextDocumentChange(event.document, event.contentChanges, isDebug);
 			overlayManager?.updateHighlightsForDocument(event.document);
@@ -131,6 +180,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			await metadataManager?.ensureLedgerForDoc(document);
 		})
 	);
+
+	// 11. Clear history when file is closed
+    context.subscriptions.push(
+        vscode.workspace.onDidCloseTextDocument((document) => {
+            undoRedoManager?.clearHistory(document.uri.fsPath);
+        })
+    );
 
 	// Init ledgers for already open documents
 	for (const document of vscode.workspace.textDocuments) {
@@ -216,10 +272,12 @@ export function deactivate(): void {
 	uiManager?.dispose();
 	overlayManager?.dispose();
 	metadataManager?.dispose();
+	undoRedoManager?.dispose();
 	trackerManager?.dispose();
 
 	uiManager = null;
 	overlayManager = null;
 	metadataManager = null;
 	trackerManager = null;
+	undoRedoManager = null;
 }

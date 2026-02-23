@@ -29,6 +29,40 @@
 				"command": "hiddenOverlay.toggleInsertMode",
 				"title": "Toggle Insert Mode (Switch Between Debug/Normal Code)",
 				"category": "Hidden Overlay"
+			},
+			{
+				"command": "hiddenOverlay.undo",
+				"title": "Undo (Debug-Aware)",
+				"category": "Hidden Overlay"
+			},
+			{
+				"command": "hiddenOverlay.redo",
+				"title": "Redo (Debug-Aware)",
+				"category": "Hidden Overlay"
+			}
+		],
+		"keybindings": [
+			{
+				"command": "hiddenOverlay.toggleDebugMode",
+				"key": "ctrl+shift+d",
+				"when": "editorTextFocus"
+			},
+			{
+				"command": "hiddenOverlay.toggleInsertMode",
+				"key": "ctrl+shift+i",
+				"when": "editorTextFocus"
+			},
+			{
+				"command": "hiddenOverlay.undo",
+				"key": "ctrl+z",
+				"mac": "cmd+z",
+				"when": "editorTextFocus"
+			},
+			{
+				"command": "hiddenOverlay.redo",
+				"key": "ctrl+y",
+				"mac": "cmd+shift+z",
+				"when": "editorTextFocus"
 			}
 		]
 	},

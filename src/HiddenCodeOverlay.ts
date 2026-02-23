@@ -191,6 +191,26 @@ export class HiddenCodeOverlay {
         editor.setDecorations(this.debugCharDecoration, ranges);
     }
 
+	/**
+     * Set mode directly without triggering file rebuilds.
+     * Used by UndoRedoManager when restoring state.
+     */
+    public async setModeWithoutToggle(debugMode: DebugMode, insertMode: InsertMode): Promise<void> {
+        this.debugMode = debugMode;
+        this.insertMode = insertMode;
+
+        // If debugOff, force insertNormal
+        if (this.debugMode === 'debugOff') {
+            this.insertMode = 'insertNormal';
+        }
+
+        // Persist
+        await this.context.workspaceState.update('hiddenOverlay.debugMode', this.debugMode);
+        await this.context.workspaceState.update('hiddenOverlay.insertMode', this.insertMode);
+
+        console.log(`[HiddenCodeOverlay] setModeWithoutToggle: debug=${this.debugMode}, insert=${this.insertMode}`);
+    }
+
 	public dispose(): void {
         console.log('[HiddenCodeOverlay] dispose()');
         if (this.debugCharDecoration) {

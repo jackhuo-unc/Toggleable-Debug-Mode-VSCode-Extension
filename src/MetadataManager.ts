@@ -609,6 +609,13 @@ export class MetadataManager {
         }
     }
 
+    /**
+     * Public method to queue a save (used by UndoRedoManager)
+     */
+    public queueSavePublic(filePath: string): void {
+        this.queueSave(filePath);
+    }
+
 
 	public dispose(): void {
 		console.log('[MetadataManager] dispose()');
