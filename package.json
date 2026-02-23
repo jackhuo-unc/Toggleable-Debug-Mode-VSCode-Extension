@@ -39,17 +39,24 @@
 				"command": "hiddenOverlay.redo",
 				"title": "Redo (Debug-Aware)",
 				"category": "Hidden Overlay"
+			},
+			{
+				"command": "hiddenOverlay.toggleMetadataVisibility",
+                "title": "Toggle Metadata Folder Visibility",
+                "category": "Hidden Overlay"
 			}
 		],
 		"keybindings": [
 			{
 				"command": "hiddenOverlay.toggleDebugMode",
 				"key": "ctrl+shift+d",
+				"mac": "cmd+shift+d",
 				"when": "editorTextFocus"
 			},
 			{
 				"command": "hiddenOverlay.toggleInsertMode",
 				"key": "ctrl+shift+i",
+				"mac": "cmd+shift+i",
 				"when": "editorTextFocus"
 			},
 			{
@@ -64,7 +71,22 @@
 				"mac": "cmd+shift+z",
 				"when": "editorTextFocus"
 			}
-		]
+		],
+		"configuration": {
+			"title": "Hidden Overlay Metadata",
+			"properties": {
+				"hiddenOverlay.hideMetadataFolders": {
+					"type": "boolean",
+					"default": true,
+					"description": "Hide __debuggable__ metadata folders from the file explorer"
+				}
+			}
+		},
+		"configurationDefaults": {
+			"files.exclude": {
+				"**/__debuggable__": true
+			}
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
