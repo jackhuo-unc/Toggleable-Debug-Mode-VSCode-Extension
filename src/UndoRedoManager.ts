@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
-import { CharRecord, FileCharLedger, MetadataManager } from './MetadataManager';
+import { TextSegment, FileLedger, MetadataManager } from './MetadataManager';
 import { DebugMode, InsertMode, HiddenCodeOverlay } from './HiddenCodeOverlay';
 
 export interface EditSnapshot {
     // Deep copy of the char array at this point in time
-    chars: CharRecord[];
+    chars: TextSegment[];
     // Mode state when this edit was made
     debugMode: DebugMode;
     insertMode: InsertMode;
@@ -78,14 +78,14 @@ export class UndoRedoManager {
     public recordBeforeEdit(filePath: string, cursorOffset: number): void {
         if (this.isUndoingOrRedoing) return;
 
-        const ledger = this.metadataManager.getCharLedgerForFile(filePath);
+        const ledger = this.metadataManager.getLedgerForFile(filePath);
         if (!ledger) return;
 
         const history = this.getOrCreateHistory(filePath);
 
         // Create snapshot of current state
         const snapshot: EditSnapshot = {
-            chars: this.deepCopyChars(ledger.chars),
+            chars: this.deepCopySegments(ledger.segments),
             debugMode: this.overlayManager.getMode(),
             insertMode: this.overlayManager.getInsertMode(),
             cursorOffset,
@@ -112,13 +112,13 @@ export class UndoRedoManager {
     public recordModeToggle(filePath: string): void {
         // When mode toggles, we want to capture the state of ALL tracked files
         // so that undo can restore them all
-        const ledger = this.metadataManager.getCharLedgerForFile(filePath);
+        const ledger = this.metadataManager.getLedgerForFile(filePath);
         if (!ledger) return;
 
         const history = this.getOrCreateHistory(filePath);
 
         const snapshot: EditSnapshot = {
-            chars: this.deepCopyChars(ledger.chars),
+            chars: this.deepCopySegments(ledger.segments),
             debugMode: this.overlayManager.getMode(),
             insertMode: this.overlayManager.getInsertMode(),
             cursorOffset: 0, // Mode toggle doesn't have a specific cursor position
@@ -145,7 +145,7 @@ export class UndoRedoManager {
             return false;
         }
 
-        const ledger = this.metadataManager.getCharLedgerForFile(filePath);
+        const ledger = this.metadataManager.getLedgerForFile(filePath);
         if (!ledger) return false;
 
         this.isUndoingOrRedoing = true;
@@ -153,7 +153,7 @@ export class UndoRedoManager {
         try {
             // Save current state to redo stack
             const currentSnapshot: EditSnapshot = {
-                chars: this.deepCopyChars(ledger.chars),
+                chars: this.deepCopySegments(ledger.segments),
                 debugMode: this.overlayManager.getMode(),
                 insertMode: this.overlayManager.getInsertMode(),
                 cursorOffset: editor.document.offsetAt(editor.selection.active),
@@ -186,7 +186,7 @@ export class UndoRedoManager {
             return false;
         }
 
-        const ledger = this.metadataManager.getCharLedgerForFile(filePath);
+        const ledger = this.metadataManager.getLedgerForFile(filePath);
         if (!ledger) return false;
 
         this.isUndoingOrRedoing = true;
@@ -194,7 +194,7 @@ export class UndoRedoManager {
         try {
             // Save current state to undo stack
             const currentSnapshot: EditSnapshot = {
-                chars: this.deepCopyChars(ledger.chars),
+                chars: this.deepCopySegments(ledger.segments),
                 debugMode: this.overlayManager.getMode(),
                 insertMode: this.overlayManager.getInsertMode(),
                 cursorOffset: editor.document.offsetAt(editor.selection.active),
@@ -220,11 +220,11 @@ export class UndoRedoManager {
      */
     private async restoreSnapshot(
         editor: vscode.TextEditor,
-        ledger: FileCharLedger,
+        ledger: FileLedger,
         snapshot: EditSnapshot
     ): Promise<void> {
-        // Restore ledger chars
-        ledger.chars = this.deepCopyChars(snapshot.chars);
+        // Restore ledger segments
+        ledger.segments = this.deepCopySegments(snapshot.chars);
 
         // Check if we need to switch debug mode
         const currentDebugMode = this.overlayManager.getMode();
@@ -232,7 +232,7 @@ export class UndoRedoManager {
 
         // Build text based on the snapshot's debug mode
         const showDebug = snapshotDebugMode === 'debugOn';
-        const newText = this.buildTextFromChars(snapshot.chars, showDebug);
+        const newText = this.buildTextFromSegments(snapshot.chars, showDebug);
 
         // Apply to editor
         const fullRange = new vscode.Range(
@@ -265,24 +265,22 @@ export class UndoRedoManager {
     }
 
     /**
-     * Build text from chars array
+     * Build text from segments array
      */
-    private buildTextFromChars(chars: CharRecord[], includeDebug: boolean): string {
-        const parts: string[] = [];
-        for (const c of chars) {
-            if (!includeDebug && c.isDebug) continue;
-            parts.push(c.ch);
+    private buildTextFromSegments(segments: TextSegment[], includeDebug: boolean): string {
+        if (includeDebug) {
+            return segments.map(s => s.text).join('');
         }
-        return parts.join('');
+        return segments.filter(s => !s.isDebug).map(s => s.text).join('');
     }
 
     /**
-     * Deep copy chars array to avoid reference issues
+     * Deep copy segments array to avoid reference issues
      */
-    private deepCopyChars(chars: CharRecord[]): CharRecord[] {
-        return chars.map(c => ({
-            ch: c.ch,
-            isDebug: c.isDebug
+    private deepCopySegments(segments: TextSegment[]): TextSegment[] {
+        return segments.map(s => ({
+            text: s.text,
+            isDebug: s.isDebug
         }));
     }
 
