@@ -1,14 +1,6 @@
-// This is all UI-facing behavior:
-
-// Status bar item that reflects current Debug Mode (ON/OFF).
-// Webview panel (this keeps your catCoding.start functionality in a single, reusable place).
-// Any future decorators / ghost overlays in the editor can also live here.
-
 import * as vscode from 'vscode';
 import { HiddenCodeOverlay } from './HiddenCodeOverlay';
 import { getWebContent } from './web';
-import { debug } from 'console';
-// import { MetadataManager } from './MetaDataManager';
 
 export class UIManager {
     private readonly context: vscode.ExtensionContext;
@@ -78,19 +70,10 @@ export class UIManager {
                 this.insertModeStatusBar.tooltip = 'Click to switch to debug code insertion';
             }
         }
-		// if (!this.statusBarItem) {
-		// 	return;
-		// }
-		// const mode = this.hiddenCodeOverlay.getMode();
-		// this.statusBarItem.text = mode === 'debugOn'
-		// 	? '$(beaker) Debug Overlay: ON'
-		// 	: '$(beaker) Debug Overlay: OFF';
-		// this.statusBarItem.tooltip = 'Toggle Debug Overlay Mode';
 	}
 
     /**
 	 * Opens (or reveals) a simple webview panel.
-	 * Mirrors your existing `catCoding.start` behavior, but isolated.
 	 */
     public openCatCodingWebview(): void {
 		// Reuse panel if it's already open

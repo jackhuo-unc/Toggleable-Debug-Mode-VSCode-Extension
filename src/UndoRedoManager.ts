@@ -3,23 +3,18 @@ import { TextSegment, FileLedger, MetadataManager } from './MetadataManager';
 import { DebugMode, InsertMode, HiddenCodeOverlay } from './HiddenCodeOverlay';
 
 export interface EditSnapshot {
-    // Deep copy of the char array at this point in time
-    chars: TextSegment[];
-    // Mode state when this edit was made
-    debugMode: DebugMode;
-    insertMode: InsertMode;
-    // Cursor position for restoring
-    cursorOffset: number;
-    // Timestamp for debugging
-    timestamp: number;
+    chars: TextSegment[];       // Deep copy of the char array at this point in time
+    debugMode: DebugMode;       // Mode state when this edit was made
+    insertMode: InsertMode;     // Insert mode state when this edit was made
+    cursorOffset: number;       // Cursor position for restoring
+    timestamp: number;          // Timestamp for debugging
 }
 
 export interface FileHistory {
     filePath: string;
     undoStack: EditSnapshot[];
     redoStack: EditSnapshot[];
-    // Maximum history size to prevent memory bloat
-    maxSize: number;
+    maxSize: number;            // Maximum history size to prevent memory bloat
 }
 
 export class UndoRedoManager {
@@ -46,7 +41,7 @@ export class UndoRedoManager {
 
     public async init(): Promise<void> {
         console.log('[UndoRedoManager] init()');
-        // History is built as edits happen, no initial setup needed
+        // History is built as edits happen, nothing needed in init
     }
 
     /**
@@ -92,11 +87,8 @@ export class UndoRedoManager {
             timestamp: Date.now()
         };
 
-        // Push to undo stack
-        history.undoStack.push(snapshot);
-
-        // Clear redo stack (new edit invalidates redo history)
-        history.redoStack = [];
+        history.undoStack.push(snapshot);   // Push to undo stack
+        history.redoStack = [];             // Clear redo stack (new edit invalidates redo history)
 
         // Trim if too large
         if (history.undoStack.length > history.maxSize) {

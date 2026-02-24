@@ -1,10 +1,3 @@
-// This is where “Debug On / Debug Off” state will live.
-
-// It will eventually talk to MetadataManager to:
-// maintain per-character IDs
-// decide what “debug on view” vs “debug off view” looks like
-// generate the instrumented output for build
-
 import * as vscode from 'vscode';
 import { MetadataManager } from './MetadataManager';
 

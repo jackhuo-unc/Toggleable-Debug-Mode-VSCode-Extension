@@ -2,16 +2,6 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as JSONStream from 'JSONStream';
-// import * as https from 'https';
-// import * as os from 'os';
-// import { send } from 'process';
-// import { LOADIPHLPAPI } from 'dns';
-// import { serialize } from 'v8';
-// import * as web from './web';
-// import { exec } from 'child_process';
-// import { glob } from 'glob';
-// // import { LogNameManager } from './LogNameManager';
-// import { error } from 'console';
 
 
 const axios = require('axios');

@@ -1,31 +1,15 @@
-//TODO: chrome logging
-//TODO: publish
-//TODO: hook up to backend
-//TODO: front end for student teacher communication
-//TODO: add aggregation of inputs
-//TODO: track active time spent coding
-
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as JSONStream from 'JSONStream';
-// import * as https from 'https';
-// import * as os from 'os';
-// import { send } from 'process';
-// import { LOADIPHLPAPI } from 'dns';
-// import { serialize } from 'v8';
 import * as web from './web';
-// import { exec } from 'child_process';
-// import { glob } from 'glob';
 import { LogNameManager } from './LogNameManager';
 import { TrackerManager } from './TrackerManager';
 import { UIManager } from './UIManager';
 import { HiddenCodeOverlay } from './HiddenCodeOverlay';
 import { MetadataManager } from './MetadataManager';
 import { UndoRedoManager } from './UndoRedoManager';
-// import { error } from 'console';
 
 let trackerManager: TrackerManager | null = null;
 let metadataManager: MetadataManager | null = null;
@@ -33,21 +17,16 @@ let overlayManager: HiddenCodeOverlay | null = null;
 let undoRedoManager: UndoRedoManager | null = null;
 let uiManager: UIManager | null = null;
 
-const axios = require('axios');
-// const { createHash } = require('crypto');
-const chokidar = require('chokidar');
-let terminalSessions: string[] = [];
-let terminalSessionWatcher;
-
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	console.log('[debug-toggle] activate() called');
 
-	// 1. Initialize metadata / overlay core
+	// 1. Init metadata / overlay core
 	metadataManager = new MetadataManager(context);
 	overlayManager = new HiddenCodeOverlay(context, metadataManager);
 
+	// 2. Init undo and redo tracker
 	undoRedoManager = new UndoRedoManager(context, metadataManager, overlayManager);
 
 	// 3. Initialize UI (status bar, webview commands, etc.)
@@ -55,14 +34,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 
 	// 4. Register extension commands here
-	// context.subscriptions.push(
-	// 	vscode.commands.registerCommand('catCoding.start', async () => {
-	// 		console.log('[debug-toggle] command catCoding.start fired');
-	// 		uiManager?.openCatCodingWebview();
-	// 	})
-	// );
-
-	context.subscriptions.push(
+	context.subscriptions.push( //This command is for TrackerManager
 		vscode.commands.registerCommand('catCoding.start', () => {
 			const panel = vscode.window.createWebviewPanel(
 				'catCoding',
@@ -110,7 +82,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     await metadataManager.scanWorkspaceForFiles();
 
 	await undoRedoManager.init();
-
 	await overlayManager.init();
 	uiManager.initStatusBar();
 
@@ -121,7 +92,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	console.log('[debug-toggle] activate() finished');
 
-	// 7. Override undo command
+	// 5. Override undo command
     context.subscriptions.push(
         vscode.commands.registerCommand('hiddenOverlay.undo', async () => {
             const editor = vscode.window.activeTextEditor;
@@ -137,7 +108,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         })
     );
 
-	// 8. Override redo command
+	// 6. Override redo command
     context.subscriptions.push(
         vscode.commands.registerCommand('hiddenOverlay.redo', async () => {
             const editor = vscode.window.activeTextEditor;
@@ -153,7 +124,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         })
     );
 
-	//5. Wire up edit interceptions
+	//7. Wire up edit interceptions
 	context.subscriptions.push(
 		vscode.workspace.onDidChangeTextDocument((event) => {
 			if (event.contentChanges.length === 0) return;
@@ -174,26 +145,26 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		})
 	);
 
-	//6. Initialize ledgers for open documents
+	//8. Initialize ledgers for open documents
 	context.subscriptions.push(
 		vscode.workspace.onDidOpenTextDocument(async (document) => {
 			await metadataManager?.ensureLedgerForDoc(document);
 		})
 	);
 
-	// 11. Clear history when file is closed
+	// 9. Clear history when file is closed
     context.subscriptions.push(
         vscode.workspace.onDidCloseTextDocument((document) => {
             undoRedoManager?.clearHistory(document.uri.fsPath);
         })
     );
 
-	// Init ledgers for already open documents
+	// 10. Init ledgers for already open documents
 	for (const document of vscode.workspace.textDocuments) {
 		await metadataManager?.ensureLedgerForDoc(document);
 	}
 
-	// 7. Update highlights when user switches between editor tabs
+	// 11. Update highlights when user switches between editor tabs
     context.subscriptions.push(
         vscode.window.onDidChangeActiveTextEditor((editor) => {
             if (editor) {
@@ -202,7 +173,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         })
     );
 
-	// 8. Update highlights when visible editors change (e.g., split view)
+	// 12. Update highlights when visible editors change (e.g., split view)
     context.subscriptions.push(
         vscode.window.onDidChangeVisibleTextEditors((editors) => {
             for (const editor of editors) {
@@ -211,6 +182,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         })
     );
 
+	// 13. Command to toggle metadata visibility in file explorer
 	context.subscriptions.push(
 		vscode.commands.registerCommand('hiddenOverlay.toggleMetadataVisibility', async () => {
 			const config = vscode.workspace.getConfiguration('files');
@@ -233,7 +205,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	console.log('[debug-toggle] activate() complete');
 
-	// Save all static info in path in local machine
+	// LogNameManager for tracker
 	LogNameManager.initializeFileStore();
 	if (LogNameManager.getStaticInfo() === null) {
 		LogNameManager.setStaticInfo();
@@ -254,7 +226,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		LogNameManager.logSessionID = infos[2];
 	}
 
-	// 2. Initialize tracker (file edits, terminals, logging, etc.)
+	// 14. Init Tracker Manager
 	trackerManager = new TrackerManager();
 
 	// Setup log file for project under project directory
@@ -264,18 +236,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	trackerManager.editLogPath = vscode.workspace.workspaceFolders[0].uri.fsPath + path.sep + "log" + path.sep + 'editLog.json';
 
-
-
-	// TODO: need to implement separate command for playing back actions.
-	// reconstruction will happen by first turning off the logging, then building, then turning logging back on
-
-	// context.subscriptions.push(
-	// 	vscode.commands.registerCommand('tracker.replayActions', function (args) {
-	// 		tracker.dispose();
-	// 		tracker.replayActions();
-	// 		tracker.initialize();
-	// 	})
-	// );
 	await trackerManager.init();
 	context.subscriptions.push(trackerManager);
 }
