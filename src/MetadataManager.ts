@@ -19,6 +19,9 @@ export interface DebugSegment {
     end: number;   // exclusive offset in current document text
 }
 
+// Callback type for notifying mode changes
+export type DebugModeChangeCallback = (newMode: 'debugOn' | 'debugOff') => Promise<void>;
+
 export class MetadataManager {
 	private readonly context: vscode.ExtensionContext;
     private ledgers: Map<string, FileLedger> = new Map();
@@ -33,14 +36,27 @@ export class MetadataManager {
     private isGitOperation: boolean = false;
     private gitOperationTimeout: NodeJS.Timeout | null = null;
 
-    private fileHashes: Map<string, string> = new Map();
+    private bulkChangeCount = 0;
+    private bulkChangeTimer: NodeJS.Timeout | null = null;
+
     //Files to skip processing (during git operations)
     private skipProcessing: Set<string> = new Set();
+
+    // Callback to notify when debug mode should change
+    private onDebugModeChange: DebugModeChangeCallback | null = null;
 
 	constructor(context: vscode.ExtensionContext) {
 		this.context = context;
         console.log('[MetadataManager] constructed');
 	}
+
+    /**
+     * Register a callback to be notified when debug mode should change
+     * (e.g., after a git operation detects a different saved mode)
+     */
+    public setDebugModeChangeCallback(callback: DebugModeChangeCallback): void {
+        this.onDebugModeChange = callback;
+    }
 
 	public async init(): Promise<void> {
 		console.log('[MetadataManager] init()');
@@ -77,6 +93,11 @@ export class MetadataManager {
         console.log('[MetadataManager] No git root found, using workspace root:', workspaceRoot);
         return workspaceRoot;
     }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Git Operation Detection
+    // ─────────────────────────────────────────────────────────────────────────────
+
     /**
      * Watch for git operations by monitoring .git/HEAD and .git/index
      */
@@ -85,10 +106,6 @@ export class MetadataManager {
 
         const gitDir = path.join(this.rootDir, '.git');
         if (!fs.existsSync(gitDir)) return;
-
-        // Watch HEAD file for branch switches
-        const headPath = path.join(gitDir, 'HEAD');
-        const indexPath = path.join(gitDir, 'index');
 
         // Use file system watcher for git files
         const gitWatcher = vscode.workspace.createFileSystemWatcher(
@@ -110,9 +127,6 @@ export class MetadataManager {
         );
         console.log('[MetadataManager] Git watcher initialized');
     }
-
-    private bulkChangeCount = 0;
-    private bulkChangeTimer: NodeJS.Timeout | null = null;
 
     /**
      * Detect bulk file changes that indicate a git operation
@@ -157,10 +171,78 @@ export class MetadataManager {
         // After git operation settles, rebuild files from metadata
         this.gitOperationTimeout = setTimeout(async () => {
             console.log('[MetadataManager] Git operation settled, rebuilding files from metadata');
-            await this.rebuildAllFilesFromMetadata();
+            await this.handlePostGitOperation();
             this.isGitOperation = false;
             this.skipProcessing.clear();
         }, 500);
+    }
+
+    /**
+     * Handle post-git-operation: detect saved mode and switch if needed
+     */
+    private async handlePostGitOperation(): Promise<void> {
+        // Reload metadata from disk first
+        await this.reloadAllMetadataFromDisk();
+
+        // Determine what debug mode the metadata was saved in
+        const detectedMode = this.detectSavedDebugMode();
+        const currentMode = this.context.workspaceState.get<string>('hiddenOverlay.debugMode') ?? 'debugOff';
+
+        console.log(`[MetadataManager] Detected saved mode: ${detectedMode}, current mode: ${currentMode}`);
+
+        if (detectedMode !== null && detectedMode !== currentMode) {
+            console.log(`[MetadataManager] Switching debug mode to match saved state: ${detectedMode}`);
+            
+            // Update the stored mode
+            await this.context.workspaceState.update('hiddenOverlay.debugMode', detectedMode);
+
+            // Notify the overlay manager to update UI and highlights
+            if (this.onDebugModeChange) {
+                await this.onDebugModeChange(detectedMode as 'debugOn' | 'debugOff');
+            }
+
+            // Show notification to user
+            const modeLabel = detectedMode === 'debugOn' ? 'Debug ON' : 'Debug OFF';
+            vscode.window.showInformationMessage(
+                `Switched to ${modeLabel} mode to match the checked-out commit.`
+            );
+        } else {
+            // Mode matches, just rebuild files to ensure consistency
+            await this.rebuildAllFilesFromMetadata();
+        }
+    }
+
+    /**
+     * Detect what debug mode the metadata files were saved in.
+     * Uses majority voting if files have different states.
+     */
+    private detectSavedDebugMode(): string | null {
+        let debugOnCount = 0;
+        let debugOffCount = 0;
+
+        for (const ledger of this.ledgers.values()) {
+            if (ledger.savedInDebugMode === true) {
+                debugOnCount++;
+            } else if (ledger.savedInDebugMode === false) {
+                debugOffCount++;
+            }
+            // If undefined (old format), don't count
+        }
+
+        const total = debugOnCount + debugOffCount;
+        if (total === 0) {
+            return null; // No metadata with saved state
+        }
+
+        // Use majority voting
+        if (debugOnCount > debugOffCount) {
+            return 'debugOn';
+        } else if (debugOffCount > debugOnCount) {
+            return 'debugOff';
+        } else {
+            // Tie - prefer debugOff as it's the safer default
+            return 'debugOff';
+        }
     }
 
     /**
@@ -177,20 +259,21 @@ export class MetadataManager {
         const currentMode = this.context.workspaceState.get<string>('hiddenOverlay.debugMode') ?? 'debugOff';
         const includeDebug = currentMode === 'debugOn';
 
-        // First, reload all metadata files (they may have changed due to git)
-        await this.reloadAllMetadataFromDisk();
-
-        // Then rebuild source files
         for (const [filePath, ledger] of this.ledgers.entries()) {
             await this.rebuildSourceFileFromLedger(filePath, ledger, includeDebug);
         }
 
-        // Refresh all open editors
+        // Refresh visible editors
         for (const editor of vscode.window.visibleTextEditors) {
             const filePath = editor.document.uri.fsPath;
             if (this.ledgers.has(filePath)) {
-                // Force reload the document
-                await vscode.commands.executeCommand('workbench.action.files.revert');
+                // Trigger a document refresh
+                const ledger = this.ledgers.get(filePath)!;
+                const newText = this.buildTextForModeFromSegments(ledger.segments, includeDebug);
+                
+                if (editor.document.getText() !== newText) {
+                    await this.refreshEditorForFile(filePath, newText);
+                }
             }
         }
 
@@ -253,7 +336,6 @@ export class MetadataManager {
             }
         }
 
-        // Write to disk
         this.isApplyingEdit = true;
         try {
             fs.writeFileSync(filePath, newText, 'utf-8');
@@ -274,6 +356,11 @@ export class MetadataManager {
             this.isApplyingEdit = false;
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Path Helpers
+    // ─────────────────────────────────────────────────────────────────────────────
+
 
     /**
      * Convert absolute path to relative path from root
@@ -384,18 +471,10 @@ export class MetadataManager {
     /**
      * Build text for a specific mode (include or exclude debug segments)
      */
-    public buildTextForMode(filePath: string, includeDebug: boolean): string | null {
+     public buildTextForMode(filePath: string, includeDebug: boolean): string | null {
         const ledger = this.ledgers.get(filePath);
         if (!ledger) return null;
-
-        if (includeDebug) {
-            return this.buildFullText(ledger.segments);
-        }
-
-        return ledger.segments
-            .filter(s => !s.isDebug)
-            .map(s => s.text)
-            .join('');
+        return this.buildTextForModeFromSegments(ledger.segments, includeDebug);
     }
 
     /**
@@ -640,7 +719,7 @@ export class MetadataManager {
 
 
     // ─────────────────────────────────────────────────────────────────────────────
-    // Ledger Loading/Saving
+    // Ledger Management
     // ─────────────────────────────────────────────────────────────────────────────
 
     public async ensureLedgerForDoc(doc: vscode.TextDocument): Promise<FileLedger | null> {
@@ -687,7 +766,7 @@ export class MetadataManager {
 
             const currentMode = this.context.workspaceState.get<string>('hiddenOverlay.debugMode') ?? 'debugOff';
             const includeDebug = currentMode === 'debugOn';
-            const rebuiltText = this.buildTextForMode(absolutePath, includeDebug);
+            const rebuiltText = this.buildTextForModeFromSegments(data.segments, includeDebug);
 
             if (rebuiltText !== null) {
                 // Check if source file needs to be updated

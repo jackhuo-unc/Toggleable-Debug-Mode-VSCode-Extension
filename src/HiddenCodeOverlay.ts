@@ -184,6 +184,26 @@ export class HiddenCodeOverlay {
         editor.setDecorations(this.debugCharDecoration, ranges);
     }
 
+    /**
+     * Called when debug mode is changed externally (e.g., by git operation detection).
+     * Updates internal state and refreshes highlights without rebuilding files.
+     */
+    public async onExternalModeChange(newMode: DebugMode): Promise<void> {
+        console.log('[HiddenCodeOverlay] External mode change to:', newMode);
+        
+        this.debugMode = newMode;
+        
+        // Reset insert mode when switching to debugOff
+        if (newMode === 'debugOff') {
+            this.insertMode = 'insertNormal';
+        }
+
+        // Update highlights for all visible editors
+        for (const editor of vscode.window.visibleTextEditors) {
+            this.updateHighlightsForEditor(editor);
+        }
+    }
+
 	/**
      * Set mode directly without triggering file rebuilds.
      * Used by UndoRedoManager when restoring state.

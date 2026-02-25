@@ -24,13 +24,25 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	// 1. Init metadata / overlay core
 	metadataManager = new MetadataManager(context);
+	// Perform any async initialization that needs to happen after wiring
+	await metadataManager.init();
+
+	
 	overlayManager = new HiddenCodeOverlay(context, metadataManager);
+	await overlayManager.init();
 
 	// 2. Init undo and redo tracker
 	undoRedoManager = new UndoRedoManager(context, metadataManager, overlayManager);
 
 	// 3. Initialize UI (status bar, webview commands, etc.)
 	uiManager = new UIManager(context, overlayManager);
+
+	metadataManager.setDebugModeChangeCallback(async (newMode) => {
+		if (overlayManager) {
+			await overlayManager.onExternalModeChange(newMode);
+		}
+		uiManager?.updateStatusBar();
+	})
 
 
 	// // 4. Register extension commands here
@@ -75,14 +87,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         })
     );
 
-	// Perform any async initialization that needs to happen after wiring
-	await metadataManager.init();
-
 	// Scan workspace for existing metadata files
     await metadataManager.scanWorkspaceForFiles();
 
 	await undoRedoManager.init();
-	await overlayManager.init();
 	uiManager.initStatusBar();
 
 	// Apply highlights to currently active editor on startup
