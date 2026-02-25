@@ -10,6 +10,8 @@ export interface TextSegment {
 export interface FileLedger {
     relativePath: string;
     segments: TextSegment[];
+    savedInDebugMode: boolean;
+    version: number;
 }
 
 export interface DebugSegment {
@@ -28,6 +30,13 @@ export class MetadataManager {
 
 	private rootDir: string | null = null;
 
+    private isGitOperation: boolean = false;
+    private gitOperationTimeout: NodeJS.Timeout | null = null;
+
+    private fileHashes: Map<string, string> = new Map();
+    //Files to skip processing (during git operations)
+    private skipProcessing: Set<string> = new Set();
+
 	constructor(context: vscode.ExtensionContext) {
 		this.context = context;
         console.log('[MetadataManager] constructed');
@@ -37,6 +46,8 @@ export class MetadataManager {
 		console.log('[MetadataManager] init()');
         this.rootDir = await this.findRootDir();
         console.log('[MetadataManager] rootDir =', this.rootDir);
+
+        this.watchForGitOperations();
 	}
 
     /**
@@ -66,6 +77,203 @@ export class MetadataManager {
         console.log('[MetadataManager] No git root found, using workspace root:', workspaceRoot);
         return workspaceRoot;
     }
+    /**
+     * Watch for git operations by monitoring .git/HEAD and .git/index
+     */
+    private watchForGitOperations(): void {
+        if (!this.rootDir) return;
+
+        const gitDir = path.join(this.rootDir, '.git');
+        if (!fs.existsSync(gitDir)) return;
+
+        // Watch HEAD file for branch switches
+        const headPath = path.join(gitDir, 'HEAD');
+        const indexPath = path.join(gitDir, 'index');
+
+        // Use file system watcher for git files
+        const gitWatcher = vscode.workspace.createFileSystemWatcher(
+            new vscode.RelativePattern(gitDir, '{HEAD,index,ORIG_HEAD,FETCH_HEAD}')
+        );
+
+        this.context.subscriptions.push(
+            gitWatcher.onDidChange(() => this.onGitOperationDetected()),
+            gitWatcher.onDidCreate(() => this.onGitOperationDetected()),
+            gitWatcher
+        );
+
+        // Also listen for workspace file changes that might indicate git operations
+        this.context.subscriptions.push(
+            vscode.workspace.onDidChangeTextDocument((event) => {
+                // If many files change at once in quick succession, likely a git operation
+                this.detectBulkChanges(event.document.uri.fsPath);
+            })
+        );
+        console.log('[MetadataManager] Git watcher initialized');
+    }
+
+    private bulkChangeCount = 0;
+    private bulkChangeTimer: NodeJS.Timeout | null = null;
+
+    /**
+     * Detect bulk file changes that indicate a git operation
+     */
+    private detectBulkChanges(filePath: string): void {
+        if (this.isApplyingEdit) return;
+        if (!this.shouldTrackFile(filePath)) return;
+
+        this.bulkChangeCount++;
+
+        if (this.bulkChangeTimer) {
+            clearTimeout(this.bulkChangeTimer);
+        }
+
+        this.bulkChangeTimer = setTimeout(() => {
+            if (this.bulkChangeCount > 3) {
+                console.log(`[MetadataManager] Bulk changes detected (${this.bulkChangeCount} files), likely git operation`);
+                this.onGitOperationDetected();
+            }
+            this.bulkChangeCount = 0;
+        }, 100);
+    }
+
+    /**
+     * Called when a git operation (branch switch, checkout, etc.) is detected
+     */
+    private onGitOperationDetected(): void {
+        console.log('[MetadataManager] Git operation detected');
+        
+        this.isGitOperation = true;
+
+        // Clear any existing timeout
+        if (this.gitOperationTimeout) {
+            clearTimeout(this.gitOperationTimeout);
+        }
+
+        // Mark all tracked files to skip processing temporarily
+        for (const filePath of this.ledgers.keys()) {
+            this.skipProcessing.add(filePath);
+        }
+
+        // After git operation settles, rebuild files from metadata
+        this.gitOperationTimeout = setTimeout(async () => {
+            console.log('[MetadataManager] Git operation settled, rebuilding files from metadata');
+            await this.rebuildAllFilesFromMetadata();
+            this.isGitOperation = false;
+            this.skipProcessing.clear();
+        }, 500);
+    }
+
+    /**
+     * Check if we should skip processing for a file (during git operations)
+     */
+    public shouldSkipProcessing(filePath: string): boolean {
+        return this.isGitOperation || this.skipProcessing.has(filePath);
+    }
+
+    /**
+     * Rebuild all tracked files from their metadata
+     */
+    private async rebuildAllFilesFromMetadata(): Promise<void> {
+        const currentMode = this.context.workspaceState.get<string>('hiddenOverlay.debugMode') ?? 'debugOff';
+        const includeDebug = currentMode === 'debugOn';
+
+        // First, reload all metadata files (they may have changed due to git)
+        await this.reloadAllMetadataFromDisk();
+
+        // Then rebuild source files
+        for (const [filePath, ledger] of this.ledgers.entries()) {
+            await this.rebuildSourceFileFromLedger(filePath, ledger, includeDebug);
+        }
+
+        // Refresh all open editors
+        for (const editor of vscode.window.visibleTextEditors) {
+            const filePath = editor.document.uri.fsPath;
+            if (this.ledgers.has(filePath)) {
+                // Force reload the document
+                await vscode.commands.executeCommand('workbench.action.files.revert');
+            }
+        }
+
+        console.log('[MetadataManager] All files rebuilt from metadata');
+    }
+
+    /**
+     * Reload all metadata files from disk (after git operation)
+     */
+    private async reloadAllMetadataFromDisk(): Promise<void> {
+        const trackedFiles = [...this.ledgers.keys()];
+
+        for (const filePath of trackedFiles) {
+            const metadataPath = this.getMetadataPath(filePath);
+            if (!metadataPath) continue;
+
+            if (fs.existsSync(metadataPath)) {
+                try {
+                    const raw = fs.readFileSync(metadataPath, 'utf-8');
+                    const data = JSON.parse(raw) as FileLedger;
+                    
+                    // Migrate old format if needed
+                    if (data.version === undefined) {
+                        data.version = 1;
+                        data.savedInDebugMode = false; // Assume old files were saved in debugOff
+                    }
+
+                    this.ledgers.set(filePath, data);
+                    console.log('[MetadataManager] Reloaded metadata for:', filePath);
+                } catch (err) {
+                    console.error('[MetadataManager] Failed to reload metadata:', err);
+                }
+            } else {
+                // Metadata file was deleted (maybe on different branch)
+                console.log('[MetadataManager] Metadata file not found after git op:', metadataPath);
+                this.ledgers.delete(filePath);
+            }
+        }
+
+        // Also scan for new metadata files that may have appeared
+        await this.scanWorkspaceForFiles();
+    }
+
+    /**
+     * Rebuild a source file from its ledger
+     */
+    private async rebuildSourceFileFromLedger(
+        filePath: string,
+        ledger: FileLedger,
+        includeDebug: boolean
+    ): Promise<void> {
+        const newText = this.buildTextForModeFromSegments(ledger.segments, includeDebug);
+
+        // Check if file exists and is different
+        if (fs.existsSync(filePath)) {
+            const currentText = fs.readFileSync(filePath, 'utf-8');
+            if (currentText === newText) {
+                console.log('[MetadataManager] File unchanged:', filePath);
+                return;
+            }
+        }
+
+        // Write to disk
+        this.isApplyingEdit = true;
+        try {
+            fs.writeFileSync(filePath, newText, 'utf-8');
+            console.log('[MetadataManager] Rebuilt source file from metadata:', filePath);
+
+            // Refresh editor if open
+            const openDoc = vscode.workspace.textDocuments.find(d => d.uri.fsPath === filePath);
+            if (openDoc) {
+                const edit = new vscode.WorkspaceEdit();
+                const fullRange = new vscode.Range(
+                    openDoc.positionAt(0),
+                    openDoc.positionAt(openDoc.getText().length)
+                );
+                edit.replace(openDoc.uri, fullRange, newText);
+                await vscode.workspace.applyEdit(edit);
+            }
+        } finally {
+            this.isApplyingEdit = false;
+        }
+    }
 
     /**
      * Convert absolute path to relative path from root
@@ -75,12 +283,20 @@ export class MetadataManager {
         return path.relative(this.rootDir, absolutePath);
     }
 
+    public getRelativePathPublic(absolutePath: string): string | null {
+        return this.toRelativePath(absolutePath);
+    }
+
     /**
      * Convert relative path to absolute path
      */
     private toAbsolutePath(relativePath: string): string | null {
         if (!this.rootDir) return null;
         return path.join(this.rootDir, relativePath);
+    }
+
+    public getAbsolutePathPublic(relativePath: string): string | null {
+        return this.toAbsolutePath(relativePath);
     }
 
     // Get the __debuggable__ folder path for a given file (using relative structure)
@@ -99,6 +315,24 @@ export class MetadataManager {
 
         const baseName = path.basename(absolutePath);
         return path.join(metaDir, `${baseName}.json`);
+    }
+
+    public getMetadataPathPublic(absolutePath: string): string | null {
+        return this.getMetadataPath(absolutePath);
+    }
+
+    public getSourceFilePathFromMetadata(metadataPath: string): string | null {
+        if (!this.rootDir) return null;
+
+        const metadataDir = path.dirname(metadataPath);
+        const fileName = path.basename(metadataPath, '.json');
+
+        if (!metadataDir.endsWith('__debuggable__')) {
+            return null;
+        }
+
+        const sourceDir = path.dirname(metadataDir);
+        return path.join(sourceDir, fileName);
     }
 
     //Check if a file should be tracked (exclude metadata files, config, etc.)
@@ -132,6 +366,13 @@ export class MetadataManager {
     // ─────────────────────────────────────────────────────────────────────────────
     // Segment Helpers
     // ─────────────────────────────────────────────────────────────────────────────
+
+    private buildTextForModeFromSegments(segments: TextSegment[], includeDebug: boolean): string {
+        if (includeDebug) {
+            return segments.map(s => s.text).join('');
+        }
+        return segments.filter(s => !s.isDebug).map(s => s.text).join('');
+    }
 
     /**
      * Build full text from segments
@@ -178,6 +419,10 @@ export class MetadataManager {
 
         return result;
     }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Offset Mapping
+    // ─────────────────────────────────────────────────────────────────────────────
 
     /**
      * Find which segment and offset within that segment corresponds to a global offset.
@@ -238,10 +483,15 @@ export class MetadataManager {
     ): void {
         // Skip if this is our own edit
         if (this.isApplyingEdit) return;
-
         if (doc.uri.scheme !== 'file') return;
 
         const filePath = doc.uri.fsPath;
+
+        // Skip during git operations
+        if (this.shouldSkipProcessing(filePath)) {
+            console.log('[MetadataManager] Skipping change processing during git operation:', filePath);
+            return;
+        }
 
         if (!this.shouldTrackFile(filePath)) {
             return;
@@ -262,16 +512,11 @@ export class MetadataManager {
         for (const change of sortedChanges) {
             // const { rangeOffset, rangeLength, text } = change;
             this.applyChangeToSegments(ledger, change, isDebugMode, isDebugInsert);
-
-            // Convert visible offset to ledger index
-            // const ledgerStartIndex = this.visibleOffsetToLedgerIndex(filePath, rangeOffset, isDebugMode);
-
-            // For deletion, we need to figure out how many ledger entries to remove
-            // This is tricky: rangeLength is in visible chars, but we need to count ledger entries
-            
         }
 
         ledger.segments = this.normalizeSegments(ledger.segments);
+
+        ledger.savedInDebugMode = isDebugMode;
 
         // Queue async save
         this.queueSave(filePath);
@@ -393,21 +638,6 @@ export class MetadataManager {
         }
     }
 
-    /**
-     * Restore segments for a file (used by UndoRedoManager).
-     * This directly replaces the segments in the ledger.
-     */
-    public restoreSegments(filePath: string, segments: TextSegment[]): void {
-        const ledger = this.ledgers.get(filePath);
-        if (!ledger) {
-            console.warn('[MetadataManager] Cannot restore segments, no ledger for:', filePath);
-            return;
-        }
-
-        ledger.segments = segments;
-        console.log(`[MetadataManager] Restored ${segments.length} segments for ${filePath}`);
-    }
-
 
     // ─────────────────────────────────────────────────────────────────────────────
     // Ledger Loading/Saving
@@ -418,6 +648,10 @@ export class MetadataManager {
 
         const filePath = doc.uri.fsPath;
         if (!this.shouldTrackFile(filePath)) return null;
+
+        if (this.shouldSkipProcessing(filePath)) {
+            return this.ledgers.get(filePath) ?? null;
+        }
 
         if (this.ledgers.has(filePath)) {
             return this.ledgers.get(filePath)!;
@@ -443,6 +677,12 @@ export class MetadataManager {
             const raw = fs.readFileSync(metaPath, 'utf-8');
             const data = JSON.parse(raw) as FileLedger;
 
+            // Migrate old format
+            if (data.version === undefined) {
+                data.version = 1;
+                data.savedInDebugMode = false;
+            }
+
             this.ledgers.set(absolutePath, data);
 
             const currentMode = this.context.workspaceState.get<string>('hiddenOverlay.debugMode') ?? 'debugOff';
@@ -450,9 +690,20 @@ export class MetadataManager {
             const rebuiltText = this.buildTextForMode(absolutePath, includeDebug);
 
             if (rebuiltText !== null) {
-                fs.writeFileSync(absolutePath, rebuiltText, 'utf-8');
-                console.log('[MetadataManager] Overwrote source file from metadata:', absolutePath);
-                await this.refreshEditorForFile(absolutePath, rebuiltText);
+                // Check if source file needs to be updated
+                const currentText = fs.existsSync(absolutePath) 
+                    ? fs.readFileSync(absolutePath, 'utf-8')
+                    : '';
+                if (currentText !== rebuiltText) {
+                    this.isApplyingEdit = true;
+                    try {
+                        fs.writeFileSync(absolutePath, rebuiltText, 'utf-8');
+                        console.log('[MetadataManager] Overwrote source file from metadata:', absolutePath);
+                        await this.refreshEditorForFile(absolutePath, rebuiltText);
+                    } finally {
+                        this.isApplyingEdit = false;
+                    }
+                }
             }
 
             return data;
@@ -468,10 +719,15 @@ export class MetadataManager {
             throw new Error(`Cannot create ledger: unable to compute relative path for ${absolutePath}`);
         }
 
+        const currentMode = this.context.workspaceState.get<string>('hiddenOverlay.debugMode') ?? 'debugOff';
+        const isDebugMode = currentMode === 'debugOn';
+
         // Start with a single non-debug segment containing all text
         const ledger: FileLedger = {
             relativePath,
-            segments: text.length > 0 ? [{ text, isDebug: false }] : []
+            segments: text.length > 0 ? [{ text, isDebug: false }] : [],
+            savedInDebugMode: isDebugMode,
+            version: 1
         };
 
         this.ledgers.set(absolutePath, ledger);
@@ -515,6 +771,9 @@ export class MetadataManager {
             return;
         }
 
+        // Update saved mode state
+        ledger.savedInDebugMode = includeDebug;
+
         const openDoc = vscode.workspace.textDocuments.find(d => d.uri.fsPath === filePath);
 
         if (openDoc) {
@@ -537,6 +796,9 @@ export class MetadataManager {
             fs.writeFileSync(filePath, newText, 'utf-8');
             console.log('[MetadataManager] Wrote closed file to disk:', filePath);
         }
+
+        // Save the updated ledger
+        this.queueSave(filePath);
     }
 
     public async scanWorkspaceForFiles(): Promise<void> {
@@ -546,31 +808,56 @@ export class MetadataManager {
         if (!workspaceFolders) return;
 
         for (const folder of workspaceFolders) {
-            const pattern = new vscode.RelativePattern(folder, '**/*');
-            const files = await vscode.workspace.findFiles(pattern, '**/node_modules/**');
+            const pattern = new vscode.RelativePattern(folder, '**/__debuggable__/*.json');
+            const metadataFiles = await vscode.workspace.findFiles(pattern);
 
-            for (const fileUri of files) {
-                const filePath = fileUri.fsPath;
-
-                if (!this.shouldTrackFile(filePath)) continue;
+            for (const metaUri of metadataFiles) {
+                const metaPath = metaUri.fsPath;
+                const sourceFilePath = this.getSourceFilePathFromMetadata(metaPath);
+                
+                if (!sourceFilePath) continue;
+                if (this.ledgers.has(sourceFilePath)) continue;
 
                 try {
-                    const stat = fs.statSync(filePath);
-                    if (stat.isDirectory()) continue;
-                } catch {
-                    continue;
-                }
+                    const raw = fs.readFileSync(metaPath, 'utf-8');
+                    const data = JSON.parse(raw) as FileLedger;
 
-                if (this.ledgers.has(filePath)) continue;
+                    // Migrate old format
+                    if (data.version === undefined) {
+                        data.version = 1;
+                        data.savedInDebugMode = false;
+                    }
 
-                const metaPath = this.getMetadataPath(filePath);
-                if (metaPath && fs.existsSync(metaPath)) {
-                    await this.loadLedgerFromDisk(filePath, metaPath);
+                    this.ledgers.set(sourceFilePath, data);
+                    console.log('[MetadataManager] Loaded metadata for:', sourceFilePath);
+
+                    // Rebuild source file if needed
+                    const currentMode = this.context.workspaceState.get<string>('hiddenOverlay.debugMode') ?? 'debugOff';
+                    const includeDebug = currentMode === 'debugOn';
+                    
+                    await this.rebuildSourceFileFromLedger(sourceFilePath, data, includeDebug);
+                } catch (err) {
+                    console.error('[MetadataManager] Failed to load metadata:', metaPath, err);
                 }
             }
         }
 
         console.log(`[MetadataManager] Scanned workspace, tracking ${this.ledgers.size} files`);
+    }
+
+    /**
+     * Restore segments for a file (used by UndoRedoManager).
+     * This directly replaces the segments in the ledger.
+     */
+    public restoreSegments(filePath: string, segments: TextSegment[]): void {
+        const ledger = this.ledgers.get(filePath);
+        if (!ledger) {
+            console.warn('[MetadataManager] Cannot restore segments, no ledger for:', filePath);
+            return;
+        }
+
+        ledger.segments = segments;
+        console.log(`[MetadataManager] Restored ${segments.length} segments for ${filePath}`);
     }
 
     public async applyEditWithoutTracking(
@@ -633,6 +920,10 @@ export class MetadataManager {
         }, 500);
     }
 
+    public queueSavePublic(filePath: string): void {
+        this.queueSave(filePath);
+    }
+
     private async flushSaves(): Promise<void> {
         const toSave = [...this.saveQueue];
         this.saveQueue.clear();
@@ -668,14 +959,16 @@ export class MetadataManager {
         }
     }
 
-    public queueSavePublic(filePath: string): void {
-        this.queueSave(filePath);
-    }
-
     public dispose(): void {
         console.log('[MetadataManager] dispose()');
         if (this.saveTimeout) {
             clearTimeout(this.saveTimeout);
+        }
+        if (this.gitOperationTimeout) {
+            clearTimeout(this.gitOperationTimeout);
+        }
+        if (this.bulkChangeTimer) {
+            clearTimeout(this.bulkChangeTimer);
         }
         this.flushSaves();
     }
