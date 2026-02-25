@@ -393,6 +393,21 @@ export class MetadataManager {
         }
     }
 
+    /**
+     * Restore segments for a file (used by UndoRedoManager).
+     * This directly replaces the segments in the ledger.
+     */
+    public restoreSegments(filePath: string, segments: TextSegment[]): void {
+        const ledger = this.ledgers.get(filePath);
+        if (!ledger) {
+            console.warn('[MetadataManager] Cannot restore segments, no ledger for:', filePath);
+            return;
+        }
+
+        ledger.segments = segments;
+        console.log(`[MetadataManager] Restored ${segments.length} segments for ${filePath}`);
+    }
+
 
     // ─────────────────────────────────────────────────────────────────────────────
     // Ledger Loading/Saving

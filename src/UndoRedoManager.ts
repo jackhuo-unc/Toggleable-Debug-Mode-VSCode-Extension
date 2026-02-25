@@ -3,7 +3,7 @@ import { TextSegment, FileLedger, MetadataManager } from './MetadataManager';
 import { DebugMode, InsertMode, HiddenCodeOverlay } from './HiddenCodeOverlay';
 
 export interface EditSnapshot {
-    chars: TextSegment[];       // Deep copy of the char array at this point in time
+    segments: TextSegment[];       // Deep copy of the char array at this point in time
     debugMode: DebugMode;       // Mode state when this edit was made
     insertMode: InsertMode;     // Insert mode state when this edit was made
     cursorOffset: number;       // Cursor position for restoring
@@ -80,7 +80,7 @@ export class UndoRedoManager {
 
         // Create snapshot of current state
         const snapshot: EditSnapshot = {
-            chars: this.deepCopySegments(ledger.segments),
+            segments: this.deepCopySegments(ledger.segments),
             debugMode: this.overlayManager.getMode(),
             insertMode: this.overlayManager.getInsertMode(),
             cursorOffset,
@@ -110,7 +110,7 @@ export class UndoRedoManager {
         const history = this.getOrCreateHistory(filePath);
 
         const snapshot: EditSnapshot = {
-            chars: this.deepCopySegments(ledger.segments),
+            segments: this.deepCopySegments(ledger.segments),
             debugMode: this.overlayManager.getMode(),
             insertMode: this.overlayManager.getInsertMode(),
             cursorOffset: 0, // Mode toggle doesn't have a specific cursor position
@@ -145,7 +145,7 @@ export class UndoRedoManager {
         try {
             // Save current state to redo stack
             const currentSnapshot: EditSnapshot = {
-                chars: this.deepCopySegments(ledger.segments),
+                segments: this.deepCopySegments(ledger.segments),
                 debugMode: this.overlayManager.getMode(),
                 insertMode: this.overlayManager.getInsertMode(),
                 cursorOffset: editor.document.offsetAt(editor.selection.active),
@@ -157,7 +157,7 @@ export class UndoRedoManager {
             const previousSnapshot = history.undoStack.pop()!;
 
             // Restore the ledger
-            await this.restoreSnapshot(editor, ledger, previousSnapshot);
+            await this.restoreSnapshot(editor, filePath, previousSnapshot);
 
             console.log(`[UndoRedoManager] Undo completed for ${filePath}`);
             return true;
@@ -186,7 +186,7 @@ export class UndoRedoManager {
         try {
             // Save current state to undo stack
             const currentSnapshot: EditSnapshot = {
-                chars: this.deepCopySegments(ledger.segments),
+                segments: this.deepCopySegments(ledger.segments),
                 debugMode: this.overlayManager.getMode(),
                 insertMode: this.overlayManager.getInsertMode(),
                 cursorOffset: editor.document.offsetAt(editor.selection.active),
@@ -198,7 +198,7 @@ export class UndoRedoManager {
             const nextSnapshot = history.redoStack.pop()!;
 
             // Restore the ledger
-            await this.restoreSnapshot(editor, ledger, nextSnapshot);
+            await this.restoreSnapshot(editor, filePath, nextSnapshot);
 
             console.log(`[UndoRedoManager] Redo completed for ${filePath}`);
             return true;
@@ -212,11 +212,12 @@ export class UndoRedoManager {
      */
     private async restoreSnapshot(
         editor: vscode.TextEditor,
-        ledger: FileLedger,
+        filePath: string,
         snapshot: EditSnapshot
     ): Promise<void> {
-        // Restore ledger segments
-        ledger.segments = this.deepCopySegments(snapshot.chars);
+         // Update the ledger segments through MetadataManager
+        // This ensures the MetadataManager's internal state is updated
+        this.metadataManager.restoreSegments(filePath, this.deepCopySegments(snapshot.segments));
 
         // Check if we need to switch debug mode
         const currentDebugMode = this.overlayManager.getMode();
@@ -224,7 +225,7 @@ export class UndoRedoManager {
 
         // Build text based on the snapshot's debug mode
         const showDebug = snapshotDebugMode === 'debugOn';
-        const newText = this.buildTextFromSegments(snapshot.chars, showDebug);
+        const newText = this.buildTextFromSegments(snapshot.segments, showDebug);
 
         // Apply to editor
         const fullRange = new vscode.Range(
@@ -253,7 +254,7 @@ export class UndoRedoManager {
         this.overlayManager.updateHighlightsForEditor(editor);
 
         // Save ledger to disk
-        this.metadataManager.queueSavePublic(ledger.relativePath);
+        this.metadataManager.queueSavePublic(filePath);
     }
 
     /**
