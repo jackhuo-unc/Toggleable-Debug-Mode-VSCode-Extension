@@ -10,14 +10,14 @@ export class GitWatcher {
     private isGitOperation: boolean = false;
     private gitOperationTimeout: NodeJS.Timeout | null = null;
 
-    private bulkChangeCount = 0;
-    private bulkChangeTimer: NodeJS.Timeout | null = null;
-
     //Files to skip processing (during git operations)
     private skipProcessing: Set<string> = new Set();
 
     // Callback to notify when debug mode should change
     private onDebugModeChange: DebugModeChangeCallback | null = null;
+
+    // Track the last git HEAD to detect ACTUAL git operations
+    private lastGitHead: string | null = null;
 
     constructor(
         private readonly context: vscode.ExtensionContext,
@@ -34,12 +34,12 @@ export class GitWatcher {
     public setDebugModeChangeCallback(callback: DebugModeChangeCallback): void {
         this.onDebugModeChange = callback;
     }
-// ─────────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────────
     // Git Operation Detection
     // ─────────────────────────────────────────────────────────────────────────────
 
     /**
-     * Watch for git operations by monitoring .git/HEAD and .git/index
+     * Watch for git operations by monitoring .git/HEAD
      */
     public init(): void {
         const rootDir = this.pathUtils.getRootDir();
@@ -48,46 +48,53 @@ export class GitWatcher {
         const gitDir = path.join(rootDir, '.git');
         if (!fs.existsSync(gitDir)) return;
 
+        // Read initial HEAD
+        this.lastGitHead = this.readGitHead(gitDir);
+        console.log('[GitWatcher] Initial HEAD:', this.lastGitHead?.substring(0, 8));
+
         // Use file system watcher for git files
         const gitWatcher = vscode.workspace.createFileSystemWatcher(
-            new vscode.RelativePattern(gitDir, '{HEAD,index,ORIG_HEAD,FETCH_HEAD}')
+            new vscode.RelativePattern(gitDir, 'HEAD')
         );
 
         this.context.subscriptions.push(
             gitWatcher.onDidChange(() => this.onGitOperationDetected()),
-            gitWatcher.onDidCreate(() => this.onGitOperationDetected()),
+            // gitWatcher.onDidCreate(() => this.onGitOperationDetected()),
             gitWatcher
         );
 
-        // Also listen for workspace file changes that might indicate git operations
-        this.context.subscriptions.push(
-            vscode.workspace.onDidChangeTextDocument((event) => {
-                // If many files change at once in quick succession, likely a git operation
-                this.detectBulkChanges(event.document.uri.fsPath);
-            })
-        );
-        console.log('[GitWatcher] Git watcher initialized');
+         console.log('[GitWatcher] Initialized - watching HEAD only');
     }
 
-    /**
-     * Detect bulk file changes that indicate a git operation
-     */
-    private detectBulkChanges(filePath: string): void {
-        if (!this.pathUtils.shouldTrackFile(filePath)) return;
-
-        this.bulkChangeCount++;
-
-        if (this.bulkChangeTimer) {
-            clearTimeout(this.bulkChangeTimer);
-        }
-
-        this.bulkChangeTimer = setTimeout(() => {
-            if (this.bulkChangeCount > 3) {
-                console.log(`[GitWatcher] Bulk changes detected (${this.bulkChangeCount} files), likely git operation`);
-                this.onGitOperationDetected();
+    private readGitHead(gitDir: string): string | null {
+        try {
+            const headPath = path.join(gitDir, 'HEAD');
+            const headContent = fs.readFileSync(headPath, 'utf-8').trim();
+            
+            // HEAD can be a ref (ref: refs/heads/main) or a commit hash
+            if (headContent.startsWith('ref: ')) {
+                const refPath = path.join(gitDir, headContent.slice(5));
+                if (fs.existsSync(refPath)) {
+                    return fs.readFileSync(refPath, 'utf-8').trim();
+                }
             }
-            this.bulkChangeCount = 0;
-        }, 100);
+            return headContent;
+        } catch {
+            return null;
+        }
+    }
+
+    private onGitFileChanged(gitDir: string): void {
+        const newHead = this.readGitHead(gitDir);
+        
+        // Only trigger if HEAD actually changed (different commit)
+        if (newHead && newHead !== this.lastGitHead) {
+            console.log('[GitWatcher] HEAD changed:', this.lastGitHead?.substring(0, 8), '->', newHead.substring(0, 8));
+            this.lastGitHead = newHead;
+            this.onGitOperationDetected();
+        } else {
+            console.log('[GitWatcher] HEAD file touched but commit unchanged, ignoring');
+        }
     }
 
      /**
@@ -105,7 +112,7 @@ export class GitWatcher {
      * Called when a git operation (branch switch, checkout, etc.) is detected
      */
     private onGitOperationDetected(): void {
-        console.log('[MetadataManager] Git operation detected');
+        console.log('[MetadataManager] Git operation detected (HEAD changed)');
         
         this.isGitOperation = true;
 
@@ -157,9 +164,10 @@ export class GitWatcher {
             vscode.window.showInformationMessage(
                 `Switched to ${modeLabel} mode to match the checked-out commit.`
             );
-        } else {
-            // Mode matches, just rebuild files to ensure consistency
             await this.rebuildAllFilesFromMetadata();
+        } else {
+            // Mode is the same - DON'T rebuild, just refresh metadata in memory
+            console.log('[GitWatcher] Mode unchanged, skipping file rebuild');
         }
     }
 
@@ -188,10 +196,7 @@ export class GitWatcher {
         // Use majority voting
         if (debugOnCount > debugOffCount) {
             return 'debugOn';
-        } else if (debugOffCount > debugOnCount) {
-            return 'debugOff';
         } else {
-            // Tie - prefer debugOff as it's the safer default
             return 'debugOff';
         }
     }
@@ -237,9 +242,6 @@ export class GitWatcher {
     public dispose(): void {
         if (this.gitOperationTimeout) {
             clearTimeout(this.gitOperationTimeout);
-        }
-        if (this.bulkChangeTimer) {
-            clearTimeout(this.bulkChangeTimer);
         }
     }
 }
