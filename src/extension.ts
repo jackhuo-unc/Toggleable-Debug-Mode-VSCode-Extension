@@ -113,11 +113,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             if (!editor) return;
 			const filePath = editor.document.uri.fsPath;
 
-            const handled = await undoRedoManager?.undo(editor);
-            if (!handled) {
-                // Fall back to VS Code's built-in undo
-                await vscode.commands.executeCommand('default:undo');
-            }
+            const handled = await undoRedoManager?.undo(filePath);
+            // if (!handled) {
+            //     // Fall back to VS Code's built-in undo
+            //     await vscode.commands.executeCommand('default:undo');
+            // }
             uiManager?.updateStatusBar();
             overlayManager?.updateHighlightsForEditor(editor);
         })
@@ -130,11 +130,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             if (!editor) return;
 			const filePath = editor.document.uri.fsPath;
 
-            const handled = await undoRedoManager?.redo(editor);
-            if (!handled) {
-                // Fall back to VS Code's built-in redo
-                await vscode.commands.executeCommand('default:redo');
-            }
+            const handled = await undoRedoManager?.redo(filePath);
+            // if (!handled) {
+            //     // Fall back to VS Code's built-in redo
+            //     await vscode.commands.executeCommand('default:redo');
+            // }
             uiManager?.updateStatusBar();
             overlayManager?.updateHighlightsForEditor(editor);
         })
