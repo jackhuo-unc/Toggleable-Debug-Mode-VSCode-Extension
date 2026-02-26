@@ -180,13 +180,29 @@ export class PerformanceTestFramework {
         // Calculate comparisons
         const comparisons: OverheadComparison[] = [];
         const comparisonPairs = [
+            // Keystroke tests
             { name: 'Keystroke Latency', baseline: 'keystroke_baseline', tracked: 'keystroke_tracked_normal_insert' },
             { name: 'Keystroke (Debug Insert)', baseline: 'keystroke_baseline', tracked: 'keystroke_tracked_debug_insert' },
             { name: 'Full Pipeline', baseline: 'keystroke_full_pipeline_baseline', tracked: 'keystroke_full_pipeline' },
             { name: 'Bulk Insert', baseline: 'bulk_insert_baseline', tracked: 'bulk_insert_tracked' },
             { name: 'Deletion', baseline: 'deletion_baseline', tracked: 'deletion_tracked' },
+            
+            // Mode toggle tests
             { name: 'Debug Mode Toggle', baseline: 'debug_mode_toggle_baseline', tracked: 'debug_mode_toggle' },
             { name: 'Insert Mode Toggle', baseline: 'insert_mode_toggle_baseline', tracked: 'insert_mode_toggle' },
+            
+            // Undo/Redo tests
+            { name: 'Undo', baseline: 'undo_baseline', tracked: 'undo_tracked' },
+            { name: 'Redo', baseline: 'redo_baseline', tracked: 'redo_tracked' },
+            { name: 'Bulk Undo', baseline: 'bulk_undo_baseline', tracked: 'bulk_undo_tracked' },
+            
+            // Position-based tests
+            { name: 'Keystroke (Start)', baseline: 'keystroke_baseline_start', tracked: 'keystroke_tracked_normal_start' },
+            { name: 'Keystroke (Middle)', baseline: 'keystroke_baseline_middle', tracked: 'keystroke_tracked_normal_middle' },
+            { name: 'Keystroke (End)', baseline: 'keystroke_baseline_end', tracked: 'keystroke_tracked_normal_end' },
+            
+            // Git tests
+            { name: 'Git Status', baseline: 'git_status_baseline', tracked: 'git_status_with_metadata' },
         ];
 
         for (const pair of comparisonPairs) {

@@ -5,44 +5,12 @@ import { PerformanceTestFramework } from './PerformanceTestFramework';
 import { KeystrokeLatencyTest } from './suite/KeystrokeLatencyTest';
 import { ModeToggleTest } from './suite/ModeToggleTest';
 import { ScalabilityTest } from './suite/ScalabilityTest';
+import { UndoRedoTest } from './suite/UndoRedoTest';
+import { GitIntegrationTest } from './suite/GitIntegrationTest';
+import { saveAndCloseActiveEditor, saveAndCloseAllEditors} from './SaveAndClose';
+
 import { MetadataManager } from '../MetadataManager';
 import { HiddenCodeOverlay } from '../HiddenCodeOverlay';
-
-async function safeDeleteFile(filePath: string, retries: number = 3): Promise<void> {
-    for (let i = 0; i < retries; i++) {
-        try {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-            }
-            return;
-        } catch (err) {
-            if (i === retries - 1) {
-                console.warn(`[Performance] Could not delete ${filePath}: ${err}`);
-            }
-        }
-    }
-}
-
-/**
- * Get the test directory in the ACTIVE WORKSPACE (not extension path)
- */
-function getTestDirectory(): string | undefined {
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
-        console.error('[Performance] No workspace folder open!');
-        return undefined;
-    }
-
-    // Use the first workspace folder
-    const workspaceRoot = workspaceFolders[0].uri.fsPath;
-    const testDir = path.join(workspaceRoot, '.performance-tests');
-    
-    console.log('[Performance] Workspace root:', workspaceRoot);
-    console.log('[Performance] Test directory:', testDir);
-    
-    return testDir;
-}
 
 /**
  * Get the output directory for reports (can stay in extension path)
@@ -68,28 +36,59 @@ export async function runAllPerformanceTests(
         fs.mkdirSync(testDir, { recursive: true });
     }
 
+    /**
+     * Helper to safely get an active editor, re-opening if needed
+     */
+    async function ensureEditor(filePath: string): Promise<{ doc: vscode.TextDocument; editor: vscode.TextEditor }> {
+        const doc = await vscode.workspace.openTextDocument(filePath);
+        const editor = await vscode.window.showTextDocument(doc, { preview: false });
+        // Small delay to ensure editor is fully ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return { doc, editor };
+    }
+
     const filesToCleanup: string[] = [];
     const metadataDirsToCleanup: string[] = [];
     const testString = 'the quick brown fox jumps';
     const bulkText = 'x'.repeat(1000);
 
+     // Define file paths upfront
+    const baselineFile = path.join(testDir, 'baseline_untracked.txt');
+    const trackedFile = path.join(testDir, 'tracked_test.ts');
+
     vscode.window.showInformationMessage('Starting performance tests...');
 
     try {
         const keystrokeTest = new KeystrokeLatencyTest(framework, metadataManager, overlayManager);
+        const undoRedoTest = new UndoRedoTest(framework, metadataManager, overlayManager);
+        const gitTest = new GitIntegrationTest(framework, metadataManager, overlayManager);
+
+        // ============================================
+        // CREATE TEST FILES
+        // ============================================
+        console.log('[Performance] Creating test files...');
+        
+        // Create baseline file with enough content for position tests
+        const baselineContent = '// Baseline test - not tracked\n' + ('x'.repeat(80) + '\n').repeat(100);
+        fs.writeFileSync(baselineFile, baselineContent);
+        filesToCleanup.push(baselineFile);
+
+        // Create tracked file with enough content for position tests
+        const trackedContent = '// Tracked test file\n' + ('const x = 1;\n').repeat(100);
+        fs.writeFileSync(trackedFile, trackedContent);
+        filesToCleanup.push(trackedFile);
+        metadataDirsToCleanup.push(path.join(testDir, '__debuggable__'));
 
         // ============================================
         // 1. BASELINE TESTS (Untracked file, no extension processing)
         // ============================================
         console.log('[Performance] === BASELINE TESTS (untracked file) ===');
-        
-        // Create an untracked file (outside of tracked directory or with no metadata)
-        const baselineFile = path.join(testDir, 'baseline_untracked.txt');
-        fs.writeFileSync(baselineFile, '// Baseline test - not tracked\n');
-        filesToCleanup.push(baselineFile);
 
-        const baselineDoc = await vscode.workspace.openTextDocument(baselineFile);
-        const baselineEditor = await vscode.window.showTextDocument(baselineDoc);
+        let { editor: baselineEditor, doc: baselineDoc } = await ensureEditor(baselineFile);
+
+        // // Verify baseline is NOT tracked
+        // const shouldTrackBaseline = metadataManager.shouldTrackFile(baselineDoc.uri);
+        // console.log(`[Performance] Baseline tracking check: ${shouldTrackBaseline ? '❌ TRACKED (BAD!)' : '✅ NOT TRACKED (GOOD)'}`);
 
         // Keystroke baseline
         console.log('[Performance] Running keystroke baseline...');
@@ -106,34 +105,35 @@ export async function runAllPerformanceTests(
         console.log('[Performance] Running full pipeline baseline...');
         await keystrokeTest.runFullPipelineBaselineTest(baselineEditor, testString, 1);
 
-        await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-        await new Promise(resolve => setTimeout(resolve, 300));
+        console.log('[Performance] Running undo baseline...');
+        await undoRedoTest.runUndoBaselineTest(baselineEditor, 20);
+
+        console.log('[Performance] Running redo baseline...');
+        await undoRedoTest.runRedoBaselineTest(baselineEditor, 20);
+
+        console.log('[Performance] Running bulk undo baseline...');
+        await undoRedoTest.runBulkUndoTest(baselineEditor, false, 10, 5);
+
+        // Close baseline editor
+        await saveAndCloseActiveEditor();
 
         // ============================================
         // 2. TRACKED TESTS (With extension processing)
         // ============================================
         console.log('[Performance] === TRACKED TESTS (with extension) ===');
 
-        // Create a tracked file (with metadata)
-        const trackedFile = path.join(testDir, 'tracked_test.ts');
-        fs.writeFileSync(trackedFile, '// Tracked test file\n');
-        filesToCleanup.push(trackedFile);
-
-        const trackedDoc = await vscode.workspace.openTextDocument(trackedFile);
-        const trackedEditor = await vscode.window.showTextDocument(trackedDoc);
+        let { editor: trackedEditor, doc: trackedDoc } = await ensureEditor(trackedFile);
 
         console.log('[Performance] Tracked file created at:', trackedFile);
         console.log('[Performance] File is in workspace:', vscode.workspace.getWorkspaceFolder(trackedDoc.uri)?.uri.fsPath);
 
         // Initialize tracking for this file
         await metadataManager.ensureLedgerForDoc(trackedDoc);
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         // Verify metadata was created
         const expectedMetadataPath = path.join(testDir, '__debuggable__', 'tracked_test.ts.json');
         console.log('[Performance] Expected metadata at:', expectedMetadataPath);
-
-        // Give it a moment to save
-        await new Promise(resolve => setTimeout(resolve, 500));
         
         if (fs.existsSync(expectedMetadataPath)) {
             console.log('[Performance] ✅ Metadata file created successfully!');
@@ -169,11 +169,39 @@ export async function runAllPerformanceTests(
         console.log('[Performance] Running deletion tracked...');
         await keystrokeTest.runDeletionTest(trackedEditor, true, 20);
 
-        await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-        await new Promise(resolve => setTimeout(resolve, 300));
+        console.log('[Performance] Running redo tracked...');
+        await undoRedoTest.runRedoTrackedTest(trackedEditor, 20);
+
+        console.log('[Performance] Running bulk undo tracked...');
+        await undoRedoTest.runBulkUndoTest(trackedEditor, true, 10, 5);
+
+        console.log('[Performance] Running debug code undo/redo test...');
+        await undoRedoTest.runDebugCodeUndoRedoTest(trackedEditor, 10);
+
+        // Close tracked editor
+        await saveAndCloseActiveEditor();
 
         // ============================================
-        // 3. MODE TOGGLE TESTS
+        // 3. POSITION-BASED TESTS
+        // ============================================
+        console.log('[Performance] === POSITION-BASED TESTS ===');
+        
+        // // Close all editors first to ensure clean state
+        await saveAndCloseAllEditors();
+
+        // Re-open both files fresh
+        const baselineDocForPosition = await vscode.workspace.openTextDocument(baselineFile);
+        const trackedDocForPosition = await vscode.workspace.openTextDocument(trackedFile);
+
+        // Run position comparison with fresh editors
+        console.log('[Performance] Running position comparison tests...');
+        await keystrokeTest.runPositionComparisonTest(baselineDocForPosition, trackedDocForPosition, testString, 2);
+
+        // Clean up editors
+        await saveAndCloseAllEditors();
+
+        // ============================================
+        // 4. MODE TOGGLE TESTS
         // ============================================
         console.log('[Performance] === MODE TOGGLE TESTS ===');
         const modeToggleTest = new ModeToggleTest(framework, overlayManager);
@@ -187,7 +215,7 @@ export async function runAllPerformanceTests(
         await modeToggleTest.runInsertModeToggleTest(20);
 
         // ============================================
-        // 4. SCALABILITY TESTS
+        // 5. SCALABILITY TESTS
         // ============================================
         console.log('[Performance] === SCALABILITY TESTS ===');
         const scalabilityTest = new ScalabilityTest(framework, metadataManager, overlayManager);
@@ -196,7 +224,7 @@ export async function runAllPerformanceTests(
         filesToCleanup.push(...scalabilityFiles);
 
         // ============================================
-        // 5. SEGMENT COUNT TESTS
+        // 6. SEGMENT COUNT TESTS
         // ============================================
         console.log('[Performance] === SEGMENT COUNT TESTS ===');
         
@@ -204,17 +232,35 @@ export async function runAllPerformanceTests(
         filesToCleanup.push(...segmentFiles);
 
         // ============================================
-        // Wait for all metadata saves to complete
+        // 7. GIT INTEGRATION TESTS
         // ============================================
-        console.log('[Performance] Waiting for metadata saves to complete...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log('[Performance] === GIT INTEGRATION TESTS ===');
+        await gitTest.runAllGitTests(testDir);
 
-        // List all created metadata files
+        // ============================================
+        // VERIFICATION: Check what metadata files exist
+        // ============================================
+        console.log('\n[Performance] === METADATA FILE VERIFICATION ===');
         const metadataDir = path.join(testDir, '__debuggable__');
         if (fs.existsSync(metadataDir)) {
             const metadataFiles = fs.readdirSync(metadataDir);
-            console.log('[Performance] Metadata files created:', metadataFiles.length);
-            metadataFiles.forEach(f => console.log('  -', f));
+            console.log(`[Performance] Metadata files created: ${metadataFiles.length}`);
+            
+            const baselineMetaFiles = metadataFiles.filter(f => f.includes('baseline'));
+            const trackedMetaFiles = metadataFiles.filter(f => !f.includes('baseline'));
+            
+            if (baselineMetaFiles.length > 0) {
+                console.error('[Performance] ❌ PROBLEM: Baseline files generated metadata:');
+                baselineMetaFiles.forEach(f => console.error(`   - ${f}`));
+                console.error('[Performance] This means baseline measurements may be contaminated!');
+            } else {
+                console.log('[Performance] ✅ No baseline files generated metadata (correct)');
+            }
+            
+            console.log(`[Performance] Tracked files with metadata: ${trackedMetaFiles.length}`);
+            trackedMetaFiles.forEach(f => console.log(`   - ${f}`));
+        } else {
+            console.log('[Performance] No metadata directory found');
         }
 
         // ============================================
@@ -226,6 +272,9 @@ export async function runAllPerformanceTests(
         // Print summary with comparisons
         framework.printSummary(report);
         printComparison(report);
+        printFileSizeComparison(report);
+        printUndoRedoComparison(report);
+        printGitComparison(report);
         printFileSizeComparison(report);
 
         vscode.window.showInformationMessage(`Performance tests complete! Report saved to: ${reportPath}`);
@@ -493,4 +542,180 @@ function printFileSizeComparison(report: any): void {
     }
 
     console.log('\n==========================================\n');
+}
+
+/**
+ * Print position-based comparison
+ */
+function printPositionComparison(report: any): void {
+    console.log('\n========== POSITION-BASED COMPARISON ==========\n');
+
+    const positions = ['start', 'middle', 'end'];
+    
+    console.log('┌───────────┬────────────┬────────────────┬───────────────┬────────────────┐');
+    console.log('│ Position  │ Baseline   │ Normal Insert  │ Debug Insert  │ Overhead       │');
+    console.log('├───────────┼────────────┼────────────────┼───────────────┼────────────────┤');
+
+    for (const pos of positions) {
+        const baseline = report.summaries[`keystroke_baseline_${pos}`];
+        const normal = report.summaries[`keystroke_tracked_normal_${pos}`];
+        const debug = report.summaries[`keystroke_tracked_debug_${pos}`];
+
+        if (baseline && normal && debug) {
+            const baselineMs = baseline.mean.toFixed(2).padEnd(10);
+            const normalMs = normal.mean.toFixed(2).padEnd(14);
+            const debugMs = debug.mean.toFixed(2).padEnd(13);
+            const overhead = `+${(normal.mean - baseline.mean).toFixed(2)}ms`.padEnd(14);
+
+            console.log(`│ ${pos.padEnd(9)} │ ${baselineMs} │ ${normalMs} │ ${debugMs} │ ${overhead} │`);
+        } else {
+            console.log(`│ ${pos.padEnd(9)} │ N/A        │ N/A            │ N/A           │ N/A            │`);
+        }
+    }
+
+    console.log('└───────────┴────────────┴────────────────┴───────────────┴────────────────┘');
+
+    // Calculate average across positions
+    let totalBaseline = 0, totalNormal = 0, totalDebug = 0, count = 0;
+    for (const pos of positions) {
+        const baseline = report.summaries[`keystroke_baseline_${pos}`];
+        const normal = report.summaries[`keystroke_tracked_normal_${pos}`];
+        const debug = report.summaries[`keystroke_tracked_debug_${pos}`];
+        if (baseline && normal && debug) {
+            totalBaseline += baseline.mean;
+            totalNormal += normal.mean;
+            totalDebug += debug.mean;
+            count++;
+        }
+    }
+
+    if (count > 0) {
+        const avgBaseline = totalBaseline / count;
+        const avgNormal = totalNormal / count;
+        const avgDebug = totalDebug / count;
+        console.log(`\nAverage across positions:`);
+        console.log(`  Baseline: ${avgBaseline.toFixed(2)}ms`);
+        console.log(`  Normal:   ${avgNormal.toFixed(2)}ms (overhead: +${(avgNormal - avgBaseline).toFixed(2)}ms)`);
+        console.log(`  Debug:    ${avgDebug.toFixed(2)}ms (overhead: +${(avgDebug - avgBaseline).toFixed(2)}ms)`);
+    }
+
+    console.log('\n================================================\n');
+}
+
+/**
+ * Print undo/redo comparison
+ */
+function printUndoRedoComparison(report: any): void {
+    console.log('\n========== UNDO/REDO COMPARISON ==========\n');
+
+    const comparisons = [
+        { name: 'Single Undo', baseline: 'undo_baseline', tracked: 'undo_tracked' },
+        { name: 'Single Redo', baseline: 'redo_baseline', tracked: 'redo_tracked' },
+        { name: 'Bulk Undo (10 edits)', baseline: 'bulk_undo_baseline', tracked: 'bulk_undo_tracked' },
+        { name: 'Debug Code Undo', baseline: 'undo_baseline', tracked: 'undo_debug_code' },
+        { name: 'Debug Code Redo', baseline: 'redo_baseline', tracked: 'redo_debug_code' },
+    ];
+
+    for (const comp of comparisons) {
+        const baseline = report.summaries[comp.baseline];
+        const tracked = report.summaries[comp.tracked];
+
+        if (baseline && tracked) {
+            const overhead = tracked.mean - baseline.mean;
+            const overheadPct = ((tracked.mean / baseline.mean) - 1) * 100;
+
+            console.log(`📊 ${comp.name}`);
+            console.log(`   Baseline: ${baseline.mean.toFixed(3)} ms (n=${baseline.count})`);
+            console.log(`   Tracked:  ${tracked.mean.toFixed(3)} ms (n=${tracked.count})`);
+            console.log(`   Overhead: ${overhead >= 0 ? '+' : ''}${overhead.toFixed(3)} ms (${overheadPct >= 0 ? '+' : ''}${overheadPct.toFixed(1)}%)`);
+            console.log('');
+        } else {
+            console.log(`⚠️  ${comp.name}: Missing data`);
+        }
+    }
+
+    console.log('==========================================\n');
+}
+
+/**
+ * Print git integration results
+ */
+function printGitComparison(report: any): void {
+    console.log('\n========== GIT INTEGRATION ==========\n');
+
+    const gitOps = [
+        { name: 'Git Status (baseline)', key: 'git_status_baseline' },
+        { name: 'Git Status (with metadata)', key: 'git_status_with_metadata' },
+        { name: 'Git Add', key: 'git_add_tracked_file' },
+        { name: 'Git Diff', key: 'git_diff_with_changes' },
+    ];
+
+    for (const op of gitOps) {
+        const stats = report.summaries[op.key];
+        if (stats) {
+            console.log(`📊 ${op.name}: ${stats.mean.toFixed(3)} ms (n=${stats.count})`);
+        }
+    }
+
+    // Compare status baseline vs with metadata
+    const statusBaseline = report.summaries['git_status_baseline'];
+    const statusWithMeta = report.summaries['git_status_with_metadata'];
+    if (statusBaseline && statusWithMeta) {
+        const overhead = statusWithMeta.mean - statusBaseline.mean;
+        console.log(`\nGit status overhead from metadata files: ${overhead >= 0 ? '+' : ''}${overhead.toFixed(3)} ms`);
+        
+        if (overhead < 1) {
+            console.log('✅ Negligible impact on git operations');
+        } else if (overhead < 5) {
+            console.log('👍 Minor impact on git operations');
+        } else {
+            console.log('⚠️  Consider optimizing metadata file count');
+        }
+    }
+
+    // Check .gitignore result
+    const gitIgnoreResult = report.results.find((r: any) => r.operation === 'git_ignore_test');
+    if (gitIgnoreResult?.metadata) {
+        const { passed, message } = gitIgnoreResult.metadata;
+        console.log(`\n.gitignore test: ${passed ? '✅' : '❌'} ${message}`);
+    }
+
+    console.log('\n======================================\n');
+}
+
+
+async function safeDeleteFile(filePath: string, retries: number = 3): Promise<void> {
+    for (let i = 0; i < retries; i++) {
+        try {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+            return;
+        } catch (err) {
+            if (i === retries - 1) {
+                console.warn(`[Performance] Could not delete ${filePath}: ${err}`);
+            }
+        }
+    }
+}
+
+/**
+ * Get the test directory in the ACTIVE WORKSPACE (not extension path)
+ */
+function getTestDirectory(): string | undefined {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+        console.error('[Performance] No workspace folder open!');
+        return undefined;
+    }
+
+    // Use the first workspace folder
+    const workspaceRoot = workspaceFolders[0].uri.fsPath;
+    const testDir = path.join(workspaceRoot, '.performance-tests');
+    
+    console.log('[Performance] Workspace root:', workspaceRoot);
+    console.log('[Performance] Test directory:', testDir);
+    
+    return testDir;
 }

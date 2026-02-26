@@ -4,6 +4,7 @@ import * as path from 'path';
 import { PerformanceTestFramework } from '../PerformanceTestFramework';
 import { MetadataManager } from '../../MetadataManager';
 import { HiddenCodeOverlay } from '../../HiddenCodeOverlay';
+import { saveAndCloseActiveEditor } from '../SaveAndClose';
 
 export interface FileSizeConfig {
     lineCount: number;
@@ -141,8 +142,7 @@ export class ScalabilityTest {
                     { lineCount: config.lineCount, totalChars: actualBaselineChars, label: config.label }
                 );
 
-                await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-                await new Promise(resolve => setTimeout(resolve, 200));
+                await saveAndCloseActiveEditor();
 
             } catch (err) {
                 console.error(`[ScalabilityTest] Baseline error for ${config.label}:`, err);
@@ -258,8 +258,7 @@ export class ScalabilityTest {
                 );
                 await this.overlayManager.toggleDebugMode(); // Toggle back
 
-                await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-                await new Promise(resolve => setTimeout(resolve, 200));
+                await saveAndCloseActiveEditor();
 
             } catch (err) {
                 console.error(`[ScalabilityTest] Tracked error for ${config.label}:`, err);
@@ -270,37 +269,252 @@ export class ScalabilityTest {
     }
 
     /**
-     * Test performance with different segment counts
+     * Test performance with different ACTUAL debug segment counts.
+     * Creates metadata files FIRST, then lets extension build source files from them.
      */
     public async runSegmentCountTest(testDir: string): Promise<string[]> {
         const segmentCounts = [1, 10, 50, 100, 500];
-        const lineCount = 1000;
+        const baseLineCount = 500;
         const createdFiles: string[] = [];
 
-        for (const debugSegmentCount of segmentCounts) {
-            const testFile = path.join(testDir, `test_${debugSegmentCount}_segments.ts`);
-            const { actualChars } = this.generateTestFile(testFile, { lineCount, debugSegmentCount });
-            createdFiles.push(testFile);
+        // Ensure metadata directory exists
+        const metadataDir = path.join(testDir, '__debuggable__');
+        if (!fs.existsSync(metadataDir)) {
+            fs.mkdirSync(metadataDir, { recursive: true });
+        }
+
+        // Get workspace root for relative paths
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        if (!workspaceRoot) {
+            console.error('[ScalabilityTest] No workspace root!');
+            return createdFiles;
+        }
+
+        for (const targetSegmentCount of segmentCounts) {
+            console.log(`\n[ScalabilityTest] ========================================`);
+            console.log(`[ScalabilityTest] Creating file with ${targetSegmentCount} debug segments`);
+            console.log(`[ScalabilityTest] ========================================`);
+
+            const fileName = `segments_${targetSegmentCount}.ts`;
+            const testFile = path.join(testDir, fileName);
+            const metadataFile = path.join(metadataDir, `${fileName}.json`);
+            const relativePath = path.relative(workspaceRoot, testFile);
 
             try {
+                // ============================================
+                // 1. Build segments array with ALTERNATING debug/non-debug
+                // ============================================
+                const segments: { text: string; isDebug: boolean }[] = [];
+                
+                const linesPerNonDebugSegment = Math.max(1, Math.floor(baseLineCount / targetSegmentCount));
+                
+                let lineNum = 0;
+                for (let i = 0; i < targetSegmentCount; i++) {
+                    // Add non-debug segment (multiple lines of normal code)
+                    const normalLines: string[] = [];
+                    for (let j = 0; j < linesPerNonDebugSegment && lineNum < baseLineCount; j++, lineNum++) {
+                        normalLines.push(`const line${lineNum} = ${lineNum};`);
+                    }
+                    if (normalLines.length > 0) {
+                        segments.push({
+                            text: normalLines.join('\n') + '\n',
+                            isDebug: false
+                        });
+                    }
+
+                    // Add debug segment (single line of debug code)
+                    segments.push({
+                        text: `console.log("DEBUG_SEGMENT_${i}");\n`,
+                        isDebug: true
+                    });
+                }
+
+                // Add any remaining lines as final non-debug segment
+                if (lineNum < baseLineCount) {
+                    const remainingLines: string[] = [];
+                    while (lineNum < baseLineCount) {
+                        remainingLines.push(`const line${lineNum} = ${lineNum};`);
+                        lineNum++;
+                    }
+                    if (remainingLines.length > 0) {
+                        segments.push({
+                            text: remainingLines.join('\n'),
+                            isDebug: false
+                        });
+                    }
+                }
+
+                const debugCount = segments.filter(s => s.isDebug).length;
+                const nonDebugCount = segments.filter(s => !s.isDebug).length;
+                console.log(`[ScalabilityTest] Built ${segments.length} segments: ${debugCount} debug, ${nonDebugCount} non-debug`);
+
+                // ============================================
+                // 2. Create the METADATA FILE FIRST (no source file yet!)
+                // ============================================
+                const ledgerData = {
+                    relativePath: relativePath,
+                    segments: segments,
+                    savedInDebugMode: true,  // Metadata was saved with debug visible
+                    version: 1
+                };
+
+                fs.writeFileSync(metadataFile, JSON.stringify(ledgerData, null, 2));
+                console.log(`[ScalabilityTest] Created metadata file: ${metadataFile}`);
+
+                // Verify metadata was written correctly
+                const verifyData = JSON.parse(fs.readFileSync(metadataFile, 'utf-8'));
+                const verifyDebugCount = verifyData.segments.filter((s: any) => s.isDebug === true).length;
+                console.log(`[ScalabilityTest] Verified: metadata has ${verifyDebugCount} debug segments`);
+
+                // ============================================
+                // 3. Ensure we're in debugOn mode (so source file includes debug code)
+                // ============================================
+                if (this.overlayManager.getMode() !== 'debugOn') {
+                    console.log('[ScalabilityTest] Switching to debugOn mode...');
+                    await this.overlayManager.toggleDebugMode();
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+
+                // ============================================
+                // 4. Create empty source files
+                // ============================================
+                console.log(`[ScalabilityTest] Manually creating source file, do not write anything to it`);
+                fs.writeFileSync(testFile, '');
+
+                // Wait for extension to detect new file and create metadata (if it tries to)
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Check if extension created metadata (it should NOT have, since we already made it)
+                if (fs.existsSync(metadataFile)) {
+                    console.log(`[ScalabilityTest] ✅ Metadata file exists as expected: ${metadataFile}`);
+                } else {
+                    console.error(`[ScalabilityTest] ❌ Metadata file was NOT created by extension: ${metadataFile}`);
+                }
+
+                // Check if the file was created
+                if (!fs.existsSync(testFile)) {
+                    console.error(`[ScalabilityTest] ❌ Source file was NOT created by extension: ${testFile}`);
+                    continue;
+                }
+                console.log(`[ScalabilityTest] ✅ Source file created by extension: ${testFile}`);
+                createdFiles.push(testFile);
+
+                await this.metadataManager.scanWorkspaceForFiles();
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Verify file content
+                const createdContent = fs.readFileSync(testFile, 'utf-8');
+                const hasDebugContent = createdContent.includes('DEBUG_SEGMENT_');
+                console.log(`[ScalabilityTest] Source file has debug content: ${hasDebugContent}`);
+                console.log(`[ScalabilityTest] Source file length: ${createdContent.length} chars`);
+
+                // ============================================
+                // 5. Now open the file - extension should load the EXISTING metadata
+                // ============================================
+                console.log(`[ScalabilityTest] Opening file (extension should load existing metadata)...`);
                 const doc = await vscode.workspace.openTextDocument(testFile);
-                await vscode.window.showTextDocument(doc);
+                const editor = await vscode.window.showTextDocument(doc, { preview: false });
 
-                await this.framework.measure(
-                    `segment_count_${debugSegmentCount}`,
-                    async () => {
-                        await this.metadataManager.ensureLedgerForDoc(doc);
-                        this.overlayManager.updateHighlightsForDocument(doc);
-                    },
-                    { debugSegmentCount, lineCount, totalChars: actualChars }
-                );
+                // Wait for extension to process
+                await new Promise(resolve => setTimeout(resolve, 500));
 
+                // ============================================
+                // 6. Verify extension loaded the correct metadata
+                // ============================================
+                const loadedLedger = this.metadataManager.getLedgerForFile(testFile);
+                
+                if (!loadedLedger) {
+                    console.error(`[ScalabilityTest] ❌ No ledger loaded!`);
+                    
+                    // Try scanning workspace
+                    console.log('[ScalabilityTest] Triggering workspace scan...');
+                    await this.metadataManager.scanWorkspaceForFiles();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+
+                const finalLedger = this.metadataManager.getLedgerForFile(testFile);
+                const actualDebugCount = finalLedger?.segments.filter(s => s.isDebug === true).length ?? 0;
+                const actualTotalSegments = finalLedger?.segments.length ?? 0;
+
+                console.log(`[ScalabilityTest] Extension loaded: ${actualDebugCount} debug segments, ${actualTotalSegments} total`);
+
+                if (actualDebugCount === targetSegmentCount) {
+                    console.log(`[ScalabilityTest] ✅ SUCCESS: Correct segment count!`);
+                } else {
+                    console.error(`[ScalabilityTest] ❌ MISMATCH: Expected ${targetSegmentCount} debug, got ${actualDebugCount}`);
+                    
+                    // Debug info
+                    if (finalLedger && finalLedger.segments.length > 0) {
+                        console.log('[ScalabilityTest] First 3 segments:');
+                        finalLedger.segments.slice(0, 3).forEach((s, i) => {
+                            const preview = s.text.length > 40 ? s.text.substring(0, 40) + '...' : s.text;
+                            console.log(`  [${i}] isDebug=${s.isDebug}, text="${preview.replace(/\n/g, '\\n')}"`);
+                        });
+                    }
+                    
+                    // Check if metadata file still has correct data
+                    const recheckMeta = JSON.parse(fs.readFileSync(metadataFile, 'utf-8'));
+                    const recheckDebug = recheckMeta.segments.filter((s: any) => s.isDebug === true).length;
+                    console.log(`[ScalabilityTest] Metadata file on disk still has: ${recheckDebug} debug segments`);
+                }
+
+                // ============================================
+                // 7. Run performance measurements
+                // ============================================
+                if (actualDebugCount > 0) {
+                    // Keystroke latency
+                    for (let i = 0; i < 5; i++) {
+                        await this.framework.measure(
+                            `keystroke_with_${targetSegmentCount}_segments`,
+                            async () => {
+                                const pos = editor.selection.active;
+                                await editor.edit(eb => eb.insert(pos, 'x'));
+                            },
+                            { targetSegmentCount, actualDebugCount, iteration: i }
+                        );
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                    }
+
+                    // Highlight refresh
+                    for (let i = 0; i < 5; i++) {
+                        await this.framework.measure(
+                            `highlight_refresh_${targetSegmentCount}_segments`,
+                            async () => {
+                                this.overlayManager.updateHighlightsForDocument(doc);
+                            },
+                            { targetSegmentCount, actualDebugCount, iteration: i }
+                        );
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                    }
+
+                    // Debug toggle
+                    for (let i = 0; i < 5; i++) {
+                        await this.framework.measure(
+                            `debug_toggle_${targetSegmentCount}_segments`,
+                            async () => {
+                                await this.overlayManager.toggleDebugMode();
+                            },
+                            { targetSegmentCount, actualDebugCount, iteration: i }
+                        );
+                        // Toggle back
+                        await this.overlayManager.toggleDebugMode();
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+                }
+
+                // Save and close
+                await doc.save();
                 await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
                 await new Promise(resolve => setTimeout(resolve, 200));
 
             } catch (err) {
-                console.error(`[ScalabilityTest] Error testing ${debugSegmentCount} segments:`, err);
+                console.error(`[ScalabilityTest] Error with ${targetSegmentCount} segments:`, err);
             }
+        }
+
+        // Ensure debugOn at end
+        if (this.overlayManager.getMode() !== 'debugOn') {
+            await this.overlayManager.toggleDebugMode();
         }
 
         return createdFiles;

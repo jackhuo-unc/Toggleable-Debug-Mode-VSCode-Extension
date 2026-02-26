@@ -44,13 +44,14 @@ export class KeystrokeLatencyTest {
      * Run baseline test at specific position
      */
     public async runBaselineTestAtPosition(
-        editor: vscode.TextEditor,
+        doc: vscode.TextDocument,
         testString: string,
         position: InsertPosition,
         iterations: number = 1
     ): Promise<void> {
         for (let iter = 0; iter < iterations; iter++) {
             for (const char of testString) {
+                const editor = await this.ensureActiveEditor(doc);
                 const insertPos = this.getInsertPosition(editor, position);
                 editor.selection = new vscode.Selection(insertPos, insertPos);
 
@@ -78,7 +79,7 @@ export class KeystrokeLatencyTest {
      * Run tracked test at specific position
      */
     public async runTrackedTestAtPosition(
-        editor: vscode.TextEditor,
+        doc: vscode.TextDocument,
         testString: string,
         position: InsertPosition,
         isDebugInsertMode: boolean,
@@ -89,6 +90,7 @@ export class KeystrokeLatencyTest {
 
         for (let iter = 0; iter < iterations; iter++) {
             for (const char of testString) {
+                const editor = await this.ensureActiveEditor(doc);
                 const insertPos = this.getInsertPosition(editor, position);
                 editor.selection = new vscode.Selection(insertPos, insertPos);
 
@@ -117,34 +119,44 @@ export class KeystrokeLatencyTest {
      * Run comprehensive position tests (baseline + tracked at all positions)
      */
     public async runPositionComparisonTest(
-        baselineEditor: vscode.TextEditor,
-        trackedEditor: vscode.TextEditor,
+        baselineDoc: vscode.TextDocument,
+        trackedDoc: vscode.TextDocument,
         testString: string,
         iterations: number = 2
     ): Promise<void> {
         const positions: InsertPosition[] = ['start', 'middle', 'end'];
 
         // Baseline tests at all positions
+        console.log('[KeystrokeLatencyTest] Running baseline position tests...');
         for (const pos of positions) {
             console.log(`[KeystrokeLatencyTest] Baseline at ${pos}...`);
-            await this.runBaselineTestAtPosition(baselineEditor, testString, pos, iterations);
+            await this.runBaselineTestAtPosition(baselineDoc, testString, pos, iterations);
+            // Save after each position to keep file clean
+            await baselineDoc.save();
         }
 
         // Tracked normal mode at all positions
+        console.log('[KeystrokeLatencyTest] Running tracked (normal) position tests...');
         if (this.overlayManager.getInsertMode() === 'insertDebug') {
             await this.overlayManager.toggleInsertMode();
         }
+
         for (const pos of positions) {
             console.log(`[KeystrokeLatencyTest] Tracked (normal) at ${pos}...`);
-            await this.runTrackedTestAtPosition(trackedEditor, testString, pos, false, iterations);
+            await this.runTrackedTestAtPosition(trackedDoc, testString, pos, false, iterations);
+            await trackedDoc.save();
         }
 
         // Tracked debug mode at all positions
+        console.log('[KeystrokeLatencyTest] Running tracked (debug) position tests...');
         await this.overlayManager.toggleInsertMode();
+        
         for (const pos of positions) {
             console.log(`[KeystrokeLatencyTest] Tracked (debug) at ${pos}...`);
-            await this.runTrackedTestAtPosition(trackedEditor, testString, pos, true, iterations);
+            await this.runTrackedTestAtPosition(trackedDoc, testString, pos, true, iterations);
+            await trackedDoc.save();
         }
+        
         await this.overlayManager.toggleInsertMode(); // Reset
     }
 
@@ -373,5 +385,20 @@ export class KeystrokeLatencyTest {
     private async waitForExtensionProcessing(): Promise<void> {
         // Give time for debounced operations to settle
         await new Promise(resolve => setTimeout(resolve, 50));
+    }
+
+    /**
+     * Ensure we have a valid active editor for the given document
+     */
+    private async ensureActiveEditor(doc: vscode.TextDocument): Promise<vscode.TextEditor> {
+        const editor = await vscode.window.showTextDocument(doc, { preview: false, preserveFocus: false });
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        // Double-check we got the right editor
+        const activeEditor = vscode.window.activeTextEditor;
+        if (!activeEditor || activeEditor.document.uri.fsPath !== doc.uri.fsPath) {
+            throw new Error(`Failed to activate editor for ${doc.uri.fsPath}`);
+        }
+        return activeEditor;
     }
 }
