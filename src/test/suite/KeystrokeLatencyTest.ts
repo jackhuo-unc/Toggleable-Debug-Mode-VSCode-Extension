@@ -3,6 +3,8 @@ import { PerformanceTestFramework } from '../PerformanceTestFramework';
 import { MetadataManager } from '../../MetadataManager';
 import { HiddenCodeOverlay } from '../../HiddenCodeOverlay';
 
+export type InsertPosition = 'start' | 'middle' | 'end';
+
 export class KeystrokeLatencyTest {
     private framework: PerformanceTestFramework;
     private metadataManager: MetadataManager;
@@ -19,8 +21,136 @@ export class KeystrokeLatencyTest {
     }
 
     /**
+     * Get position in document based on location type
+     */
+    private getInsertPosition(editor: vscode.TextEditor, position: InsertPosition): vscode.Position {
+        const doc = editor.document;
+        switch (position) {
+            case 'start':
+                return new vscode.Position(0, 0);
+            case 'middle':
+                const midLine = Math.floor(doc.lineCount / 2);
+                const midLineText = doc.lineAt(midLine).text;
+                const midChar = Math.floor(midLineText.length / 2);
+                return new vscode.Position(midLine, midChar);
+            case 'end':
+                const lastLine = doc.lineCount - 1;
+                const lastLineText = doc.lineAt(lastLine).text;
+                return new vscode.Position(lastLine, lastLineText.length);
+        }
+    }
+
+    /**
+     * Run baseline test at specific position
+     */
+    public async runBaselineTestAtPosition(
+        editor: vscode.TextEditor,
+        testString: string,
+        position: InsertPosition,
+        iterations: number = 1
+    ): Promise<void> {
+        for (let iter = 0; iter < iterations; iter++) {
+            for (const char of testString) {
+                const insertPos = this.getInsertPosition(editor, position);
+                editor.selection = new vscode.Selection(insertPos, insertPos);
+
+                await this.framework.measure(
+                    `keystroke_baseline_${position}`,
+                    async () => {
+                        await editor.edit(editBuilder => {
+                            editBuilder.insert(editor.selection.active, char);
+                        });
+                    },
+                    { 
+                        char, 
+                        fileSize: editor.document.getText().length,
+                        iteration: iter,
+                        position,
+                        tracked: false
+                    }
+                );
+                await new Promise(resolve => setTimeout(resolve, 5));
+            }
+        }
+    }
+
+    /**
+     * Run tracked test at specific position
+     */
+    public async runTrackedTestAtPosition(
+        editor: vscode.TextEditor,
+        testString: string,
+        position: InsertPosition,
+        isDebugInsertMode: boolean,
+        iterations: number = 1
+    ): Promise<void> {
+        const modeLabel = isDebugInsertMode ? 'debug' : 'normal';
+        const operationName = `keystroke_tracked_${modeLabel}_${position}`;
+
+        for (let iter = 0; iter < iterations; iter++) {
+            for (const char of testString) {
+                const insertPos = this.getInsertPosition(editor, position);
+                editor.selection = new vscode.Selection(insertPos, insertPos);
+
+                await this.framework.measure(
+                    operationName,
+                    async () => {
+                        await editor.edit(editBuilder => {
+                            editBuilder.insert(editor.selection.active, char);
+                        });
+                    },
+                    { 
+                        char, 
+                        fileSize: editor.document.getText().length,
+                        iteration: iter,
+                        position,
+                        tracked: true,
+                        debugInsertMode: isDebugInsertMode
+                    }
+                );
+                await new Promise(resolve => setTimeout(resolve, 5));
+            }
+        }
+    }
+
+    /**
+     * Run comprehensive position tests (baseline + tracked at all positions)
+     */
+    public async runPositionComparisonTest(
+        baselineEditor: vscode.TextEditor,
+        trackedEditor: vscode.TextEditor,
+        testString: string,
+        iterations: number = 2
+    ): Promise<void> {
+        const positions: InsertPosition[] = ['start', 'middle', 'end'];
+
+        // Baseline tests at all positions
+        for (const pos of positions) {
+            console.log(`[KeystrokeLatencyTest] Baseline at ${pos}...`);
+            await this.runBaselineTestAtPosition(baselineEditor, testString, pos, iterations);
+        }
+
+        // Tracked normal mode at all positions
+        if (this.overlayManager.getInsertMode() === 'insertDebug') {
+            await this.overlayManager.toggleInsertMode();
+        }
+        for (const pos of positions) {
+            console.log(`[KeystrokeLatencyTest] Tracked (normal) at ${pos}...`);
+            await this.runTrackedTestAtPosition(trackedEditor, testString, pos, false, iterations);
+        }
+
+        // Tracked debug mode at all positions
+        await this.overlayManager.toggleInsertMode();
+        for (const pos of positions) {
+            console.log(`[KeystrokeLatencyTest] Tracked (debug) at ${pos}...`);
+            await this.runTrackedTestAtPosition(trackedEditor, testString, pos, true, iterations);
+        }
+        await this.overlayManager.toggleInsertMode(); // Reset
+    }
+
+    /**
      * Run baseline test on an UNTRACKED file (no metadata, no extension processing)
-     * This simulates pure VS Code editing performance
+     * Measures ONLY the VS Code edit API time
      */
     public async runBaselineTest(
         editor: vscode.TextEditor,
@@ -36,6 +166,7 @@ export class KeystrokeLatencyTest {
                         await editor.edit(editBuilder => {
                             editBuilder.insert(position, char);
                         });
+                        // DON'T add artificial delay - measure actual edit time only
                     },
                     { 
                         char, 
@@ -44,15 +175,18 @@ export class KeystrokeLatencyTest {
                         tracked: false
                     }
                 );
-                // Small delay to simulate realistic typing
-                await new Promise(resolve => setTimeout(resolve, 10));
+                // Delay OUTSIDE measurement to prevent overlap
+                await new Promise(resolve => setTimeout(resolve, 5));
             }
         }
     }
 
     /**
-     * Run test on a TRACKED file (with full extension processing)
-     * This measures the overhead of the extension
+     * Run test on a TRACKED file
+     * Measures ONLY the VS Code edit API time (NOT debounced background processing)
+     * 
+     * The extension's overhead comes from synchronous event handlers in onDidChangeTextDocument,
+     * NOT from the debounced metadata save which happens in background
      */
     public async runTrackedTest(
         editor: vscode.TextEditor,
@@ -73,8 +207,8 @@ export class KeystrokeLatencyTest {
                         await editor.edit(editBuilder => {
                             editBuilder.insert(position, char);
                         });
-                        // Wait for extension processing to complete
-                        await this.waitForExtensionProcessing();
+                        // Measure only the synchronous edit path
+                        // Background debounced operations don't affect user-perceived latency
                     },
                     { 
                         char, 
@@ -84,8 +218,70 @@ export class KeystrokeLatencyTest {
                         debugInsertMode: isDebugInsertMode
                     }
                 );
-                // Small delay to simulate realistic typing
-                await new Promise(resolve => setTimeout(resolve, 10));
+                // Delay OUTSIDE measurement
+                await new Promise(resolve => setTimeout(resolve, 5));
+            }
+        }
+    }
+
+    /**
+     * Full pipeline baseline (UNTRACKED) - same wait time for fair comparison
+     * This isolates extension overhead from the artificial wait time
+     */
+    public async runFullPipelineBaselineTest(
+        editor: vscode.TextEditor,
+        testString: string,
+        iterations: number = 1
+    ): Promise<void> {
+        for (let iter = 0; iter < iterations; iter++) {
+            for (const char of testString) {
+                await this.framework.measure(
+                    'keystroke_full_pipeline_baseline',
+                    async () => {
+                        const position = editor.selection.active;
+                        await editor.edit(editBuilder => {
+                            editBuilder.insert(position, char);
+                        });
+                        // Same wait as tracked full pipeline for fair comparison
+                        await this.waitForAllProcessing();
+                    },
+                    { 
+                        char, 
+                        fileSize: editor.document.getText().length,
+                        iteration: iter
+                    }
+                );
+            }
+        }
+    }
+
+    /**
+     * Measure the FULL pipeline including all async processing
+     * This shows total time until everything settles, useful for understanding full overhead
+     */
+    public async runFullPipelineTest(
+        editor: vscode.TextEditor,
+        testString: string,
+        iterations: number = 1
+    ): Promise<void> {
+        for (let iter = 0; iter < iterations; iter++) {
+            for (const char of testString) {
+                await this.framework.measure(
+                    'keystroke_full_pipeline',
+                    async () => {
+                        const position = editor.selection.active;
+                        await editor.edit(editBuilder => {
+                            editBuilder.insert(position, char);
+                        });
+                        // Wait for ALL async operations to complete
+                        await this.waitForAllProcessing();
+                    },
+                    { 
+                        char, 
+                        fileSize: editor.document.getText().length,
+                        iteration: iter
+                    }
+                );
             }
         }
     }
@@ -102,7 +298,6 @@ export class KeystrokeLatencyTest {
         const operationName = tracked ? 'bulk_insert_tracked' : 'bulk_insert_baseline';
 
         for (let iter = 0; iter < iterations; iter++) {
-            // Reset to start of file
             const startPos = new vscode.Position(0, 0);
             editor.selection = new vscode.Selection(startPos, startPos);
 
@@ -112,9 +307,7 @@ export class KeystrokeLatencyTest {
                     await editor.edit(editBuilder => {
                         editBuilder.insert(editor.selection.active, textToInsert);
                     });
-                    if (tracked) {
-                        await this.waitForExtensionProcessing();
-                    }
+                    // No artificial delay
                 },
                 {
                     textLength: textToInsert.length,
@@ -123,12 +316,13 @@ export class KeystrokeLatencyTest {
                 }
             );
 
-            // Clear the inserted text for next iteration
-            const endPos = editor.document.positionAt(textToInsert.length);
+            // Cleanup OUTSIDE measurement
+            await new Promise(resolve => setTimeout(resolve, 20));
+            const endPos = editor.document.positionAt(editor.document.getText().length);
             await editor.edit(editBuilder => {
                 editBuilder.delete(new vscode.Range(startPos, endPos));
             });
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await new Promise(resolve => setTimeout(resolve, 20));
         }
     }
 
@@ -143,29 +337,34 @@ export class KeystrokeLatencyTest {
         const operationName = tracked ? 'deletion_tracked' : 'deletion_baseline';
 
         for (let iter = 0; iter < iterations; iter++) {
-            // First insert a character
+            // Insert outside measurement
             const position = editor.selection.active;
             await editor.edit(editBuilder => {
                 editBuilder.insert(position, 'x');
             });
-            await new Promise(resolve => setTimeout(resolve, 20));
+            await new Promise(resolve => setTimeout(resolve, 10));
 
-            // Now measure deletion
+            // Measure ONLY deletion
             await this.framework.measure(
                 operationName,
                 async () => {
                     await vscode.commands.executeCommand('deleteLeft');
-                    if (tracked) {
-                        await this.waitForExtensionProcessing();
-                    }
                 },
                 {
                     iteration: iter,
                     tracked
                 }
             );
-            await new Promise(resolve => setTimeout(resolve, 20));
+            await new Promise(resolve => setTimeout(resolve, 10));
         }
+    }
+
+    /**
+     * Wait for all async processing to complete (metadata save, etc.)
+     */
+    private async waitForAllProcessing(): Promise<void> {
+        // This is the debounce time for metadata saves
+        await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     /**

@@ -29,6 +29,24 @@ export interface OverheadComparison {
     overheadPercent: number;
 }
 
+export interface FileSizeComparison {
+    label: string;
+    lineCount: number;
+    charsPerLine: number;
+    totalChars: number;
+    baselineMean: number;
+    normalInsertMean: number;
+    debugInsertMean: number;
+    normalOverheadMs: number;
+    normalOverheadPercent: number;
+    debugOverheadMs: number;
+    debugOverheadPercent: number;
+    highlightRenderMs?: number;
+    debugToggleMs?: number;
+    fileOpenBaselineMs?: number;
+    fileOpenTrackedMs?: number;
+}
+
 export interface PerformanceReport {
     testName: string;
     timestamp: Date;
@@ -41,6 +59,7 @@ export interface PerformanceReport {
     results: TimingResult[];
     summaries: Record<string, OperationSummary>;
     overheads?: OverheadComparison[];
+    fileSizeScaling?: FileSizeComparison[];
 }
 
 export class PerformanceTestFramework {
@@ -162,8 +181,12 @@ export class PerformanceTestFramework {
         const comparisons: OverheadComparison[] = [];
         const comparisonPairs = [
             { name: 'Keystroke Latency', baseline: 'keystroke_baseline', tracked: 'keystroke_tracked_normal_insert' },
+            { name: 'Keystroke (Debug Insert)', baseline: 'keystroke_baseline', tracked: 'keystroke_tracked_debug_insert' },
+            { name: 'Full Pipeline', baseline: 'keystroke_full_pipeline_baseline', tracked: 'keystroke_full_pipeline' },
             { name: 'Bulk Insert', baseline: 'bulk_insert_baseline', tracked: 'bulk_insert_tracked' },
             { name: 'Deletion', baseline: 'deletion_baseline', tracked: 'deletion_tracked' },
+            { name: 'Debug Mode Toggle', baseline: 'debug_mode_toggle_baseline', tracked: 'debug_mode_toggle' },
+            { name: 'Insert Mode Toggle', baseline: 'insert_mode_toggle_baseline', tracked: 'insert_mode_toggle' },
         ];
 
         for (const pair of comparisonPairs) {
@@ -178,6 +201,55 @@ export class PerformanceTestFramework {
                     overheadMs: trackedStats.mean - baselineStats.mean,
                     overheadPercent: ((trackedStats.mean / baselineStats.mean) - 1) * 100
                 });
+            } else {
+                // Log missing data for debugging
+                if (!baselineStats) {
+                    console.warn(`[PerformanceTestFramework] Missing baseline for "${pair.name}": ${pair.baseline}`);
+                }
+                if (!trackedStats) {
+                    console.warn(`[PerformanceTestFramework] Missing tracked for "${pair.name}": ${pair.tracked}`);
+                }
+            }
+        }
+
+        const fileSizeScaling: FileSizeComparison[] = [];
+        const labels = [
+            '100_lines_8K', '500_lines_40K', '1K_lines_80K', '5K_lines_400K', '10K_lines_800K',
+            '500_lines_10K_short', '500_lines_60K_long', '500_lines_100K_verylong',
+            '1K_lines_40K_narrow', '200_lines_40K_wide'
+        ];
+        
+        for (const label of labels) {
+            const baseline = summaries[`baseline_${label}`];
+            const normal = summaries[`tracked_normal_${label}`];
+            const debug = summaries[`tracked_debug_${label}`];
+            const highlight = summaries[`highlight_render_${label}`];
+            const toggle = summaries[`debug_toggle_${label}`];
+            const fileOpenBaseline = summaries[`file_open_baseline_${label}`];
+            const fileOpenTracked = summaries[`file_open_tracked_${label}`];
+
+            if (baseline && normal && debug) {
+                // Extract metrics from result metadata
+                const sampleResult = this.results.find(r => r.operation === `baseline_${label}`);
+                const meta = sampleResult?.metadata as Record<string, number> | undefined;
+
+                fileSizeScaling.push({
+                    label,
+                    lineCount: meta?.lineCount ?? 0,
+                    charsPerLine: meta?.charsPerLine ?? 80,
+                    totalChars: meta?.totalChars ?? 0,
+                    baselineMean: baseline.mean,
+                    normalInsertMean: normal.mean,
+                    debugInsertMean: debug.mean,
+                    normalOverheadMs: normal.mean - baseline.mean,
+                    normalOverheadPercent: ((normal.mean / baseline.mean) - 1) * 100,
+                    debugOverheadMs: debug.mean - baseline.mean,
+                    debugOverheadPercent: ((debug.mean / baseline.mean) - 1) * 100,
+                    highlightRenderMs: highlight?.mean,
+                    debugToggleMs: toggle?.mean,
+                    fileOpenBaselineMs: fileOpenBaseline?.mean,
+                    fileOpenTrackedMs: fileOpenTracked?.mean
+                });
             }
         }
 
@@ -191,7 +263,8 @@ export class PerformanceTestFramework {
             },
             results: this.results,
             summaries,
-            overheads: comparisons
+            overheads: comparisons,
+            fileSizeScaling
         };
     }
 

@@ -99,6 +99,7 @@ export class PathUtils {
     public shouldTrackFile(filePath: string): boolean {
         if (!filePath || filePath.length === 0) return false;
         if (!path.isAbsolute(filePath)) return false;
+        if (filePath.includes('baseline_')) return false; // Exclude baseline testing files
         if (filePath.includes('__debuggable__')) return false;
         if (filePath.includes('VSCODE-config')) return false;
         if (filePath.includes('.vscode')) return false;

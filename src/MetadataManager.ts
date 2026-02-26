@@ -80,6 +80,10 @@ export class MetadataManager {
         return this.ledgerStore.get(filePath);
     }
 
+    public shouldTrackFile(filePath: string): boolean {
+        return this.pathUtils.shouldTrackFile(filePath);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────────
     // Public Segment/Text Helpers
     // ─────────────────────────────────────────────────────────────────────────────
