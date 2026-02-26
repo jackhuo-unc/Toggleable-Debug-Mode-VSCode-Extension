@@ -75,7 +75,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	context.subscriptions.push(
         vscode.commands.registerCommand('hiddenOverlay.toggleDebugMode', async () => {
-            await overlayManager?.toggleDebugMode();
+            // Record state BEFORE toggle for all open documents
+            const editor = vscode.window.activeTextEditor;
+            // if (editor) {
+            //     undoRedoManager?.recordModeToggle(editor.document.uri.fsPath);
+            // }
+			
+			await overlayManager?.toggleDebugMode();
             uiManager?.updateStatusBar();
         })
     );
@@ -105,6 +111,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         vscode.commands.registerCommand('hiddenOverlay.undo', async () => {
             const editor = vscode.window.activeTextEditor;
             if (!editor) return;
+			const filePath = editor.document.uri.fsPath;
 
             const handled = await undoRedoManager?.undo(editor);
             if (!handled) {
@@ -121,6 +128,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         vscode.commands.registerCommand('hiddenOverlay.redo', async () => {
             const editor = vscode.window.activeTextEditor;
             if (!editor) return;
+			const filePath = editor.document.uri.fsPath;
 
             const handled = await undoRedoManager?.redo(editor);
             if (!handled) {

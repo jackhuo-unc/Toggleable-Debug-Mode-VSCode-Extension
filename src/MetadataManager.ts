@@ -141,7 +141,6 @@ export class MetadataManager {
         const sortedChanges = [...changes].sort((a, b) => b.rangeOffset - a.rangeOffset);
 
         for (const change of sortedChanges) {
-            // const { rangeOffset, rangeLength, text } = change;
             this.segmentManager.applyChange(
                 ledger, 
                 change.rangeOffset, 
@@ -190,7 +189,7 @@ export class MetadataManager {
             return null;
         }
 
-        console.log('[MetadataManager] !!! LOADING FROM DISK !!!', filePath); // ADD
+        console.log('[MetadataManager] !!! LOADING FROM DISK !!!', filePath);
 
         if (fs.existsSync(metaPath)) {
             console.log('[MetadataManager] Loading ledger from disk:', metaPath);
@@ -213,12 +212,6 @@ export class MetadataManager {
                 ? fs.readFileSync(absolutePath, 'utf-8')
                 : '';
             if (currentText !== rebuiltText) {
-                // ADD THIS: This is likely the culprit!
-                console.log('[MetadataManager] !!! loadLedgerFromDisk OVERWRITING !!!', absolutePath);
-                console.log('[MetadataManager] Reason: currentText !== rebuiltText');
-                console.log('[MetadataManager] currentText length:', currentText.length);
-                console.log('[MetadataManager] rebuiltText length:', rebuiltText.length);
-                console.trace('[MetadataManager] Stack trace:');
                 this.isApplyingEdit = true;
                 try {
                     fs.writeFileSync(absolutePath, rebuiltText, 'utf-8');
@@ -238,11 +231,6 @@ export class MetadataManager {
         const openDoc = vscode.workspace.textDocuments.find(d => d.uri.fsPath === filePath);
 
         if (openDoc) {
-            // ADD THIS: Log when we're about to overwrite
-            console.log('[MetadataManager] !!! OVERWRITING EDITOR !!!', filePath);
-            console.log('[MetadataManager] Current text length:', openDoc.getText().length);
-            console.log('[MetadataManager] New text length:', newText.length);
-            console.trace('[MetadataManager] Stack trace:');
             const edit = new vscode.WorkspaceEdit();
             const fullRange = new vscode.Range(
                 openDoc.positionAt(0),
@@ -269,9 +257,6 @@ export class MetadataManager {
         ledger: FileLedger,
         includeDebug: boolean
     ): Promise<void> {
-        // ADD THIS
-        console.log('[MetadataManager] !!! REBUILDING SOURCE FILE !!!', filePath);
-        console.trace('[MetadataManager] Stack trace:');
         const newText = this.segmentManager.buildTextForModeFromSegments(ledger.segments, includeDebug);
 
         // Check if file exists and is different
