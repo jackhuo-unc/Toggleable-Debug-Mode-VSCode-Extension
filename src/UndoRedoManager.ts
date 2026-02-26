@@ -148,6 +148,8 @@ export class UndoRedoManager {
         // First, flush any pending edit snapshot
         this.flushPendingSnapshot(filePath);
 
+        if (this.isUndoingOrRedoing) return;
+
         const ledger = this.metadataManager.getLedgerForFile(filePath);
         if (!ledger) return;
 
@@ -168,6 +170,36 @@ export class UndoRedoManager {
             history.undoStack.shift();
         }
         console.log(`[UndoRedoManager] Recorded mode toggle for ${filePath}`);
+    }
+
+    /**
+     * Record an insert mode toggle as a separate undoable action.
+     * Call this BEFORE the toggle happens.
+     */
+    public recordInsertModeToggle(filePath: string): void {
+        if (this.isUndoingOrRedoing) return;
+
+        const ledger = this.metadataManager.getLedgerForFile(filePath);
+        if (!ledger) return;
+
+        const history = this.getOrCreateHistory(filePath);
+
+        const snapshot: EditSnapshot = {
+            segments: this.deepCopySegments(ledger.segments),
+            debugMode: this.overlayManager.getMode(),
+            insertMode: this.overlayManager.getInsertMode(),
+            cursorOffset: 0,
+            timestamp: Date.now()
+        };
+
+        history.undoStack.push(snapshot);
+        history.redoStack = [];
+
+        if (history.undoStack.length > history.maxSize) {
+            history.undoStack.shift();
+        }
+
+        console.log(`[UndoRedoManager] Recorded insert mode toggle for ${filePath}, undo stack: ${history.undoStack.length}`);
     }
 
     /**
