@@ -191,7 +191,7 @@ export class GitIntegrationTest {
     }
 
     /**
-     * Test that .gitignore properly excludes __debuggable__
+     * Test that .gitignore properly includes __debuggable__
      */
     public async runGitIgnoreTest(testDir: string): Promise<{ passed: boolean; message: string }> {
         if (!this.isGitAvailable(testDir)) {
@@ -224,17 +224,17 @@ export class GitIntegrationTest {
         
         await saveAndCloseActiveEditor();
 
-        // Verify __debuggable__ is NOT in the status
+        // Verify __debuggable__ is in the status
         if (status.includes('__debuggable__')) {
             return { 
-                passed: false, 
-                message: '__debuggable__ folder is being tracked by git! Check .gitignore' 
+                passed: true, 
+                message: '__debuggable__ folder is being tracked by git as expected' 
             };
         }
 
         return { 
-            passed: true, 
-            message: '__debuggable__ folder is properly ignored by git' 
+            passed: false, 
+            message: '__debuggable__ folder is not being tracked by git! Check .gitignore' 
         };
     }
 
