@@ -44,7 +44,13 @@
 				"command": "hiddenOverlay.toggleMetadataVisibility",
                 "title": "Toggle Metadata Folder Visibility",
                 "category": "Hidden Overlay"
+			},
+			{
+				"command": "hiddenOverlay.runPerformanceTests",
+				"title": "Run Performance Tests",
+				"category": "Hidden Overlay"
 			}
+
 		],
 		"keybindings": [
 			{

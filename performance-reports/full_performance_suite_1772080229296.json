@@ -1,0 +1,3795 @@
+{
+  "testName": "full_performance_suite",
+  "timestamp": "2026-02-26T04:30:29.296Z",
+  "environment": {
+    "vscodeVersion": "1.109.5",
+    "platform": "darwin"
+  },
+  "results": [
+    {
+      "operation": "keystroke_baseline",
+      "duration": 29.870457999999417,
+      "timestamp": 1772080199556,
+      "metadata": {
+        "char": "t",
+        "fileSize": 31,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 6.115708999999697,
+      "timestamp": 1772080199573,
+      "metadata": {
+        "char": "h",
+        "fileSize": 32,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 2.4230829999996786,
+      "timestamp": 1772080199587,
+      "metadata": {
+        "char": "e",
+        "fileSize": 33,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 4.035249999998996,
+      "timestamp": 1772080199603,
+      "metadata": {
+        "char": " ",
+        "fileSize": 34,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 5.5613329999996495,
+      "timestamp": 1772080199620,
+      "metadata": {
+        "char": "q",
+        "fileSize": 35,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 68.58708300000035,
+      "timestamp": 1772080199700,
+      "metadata": {
+        "char": "u",
+        "fileSize": 36,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 2.2756250000002183,
+      "timestamp": 1772080199713,
+      "metadata": {
+        "char": "i",
+        "fileSize": 37,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 2.0581659999988915,
+      "timestamp": 1772080199726,
+      "metadata": {
+        "char": "c",
+        "fileSize": 38,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 2.234167000000525,
+      "timestamp": 1772080199740,
+      "metadata": {
+        "char": "k",
+        "fileSize": 39,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 2.1361660000002303,
+      "timestamp": 1772080199753,
+      "metadata": {
+        "char": " ",
+        "fileSize": 40,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 3.196583000000828,
+      "timestamp": 1772080199769,
+      "metadata": {
+        "char": "b",
+        "fileSize": 41,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 5.4053339999991294,
+      "timestamp": 1772080199787,
+      "metadata": {
+        "char": "r",
+        "fileSize": 42,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 5.764166999999361,
+      "timestamp": 1772080199803,
+      "metadata": {
+        "char": "o",
+        "fileSize": 43,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 3.4130420000001322,
+      "timestamp": 1772080199817,
+      "metadata": {
+        "char": "w",
+        "fileSize": 44,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.6782079999993584,
+      "timestamp": 1772080199829,
+      "metadata": {
+        "char": "n",
+        "fileSize": 45,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 2.181125000000975,
+      "timestamp": 1772080199843,
+      "metadata": {
+        "char": " ",
+        "fileSize": 46,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.6842080000005808,
+      "timestamp": 1772080199858,
+      "metadata": {
+        "char": "f",
+        "fileSize": 47,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.8543750000008004,
+      "timestamp": 1772080199870,
+      "metadata": {
+        "char": "o",
+        "fileSize": 48,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 4.420083999999406,
+      "timestamp": 1772080199885,
+      "metadata": {
+        "char": "x",
+        "fileSize": 49,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.2875829999993584,
+      "timestamp": 1772080199898,
+      "metadata": {
+        "char": " ",
+        "fileSize": 50,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.6428329999998823,
+      "timestamp": 1772080199913,
+      "metadata": {
+        "char": "j",
+        "fileSize": 51,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 2.3352089999989403,
+      "timestamp": 1772080199927,
+      "metadata": {
+        "char": "u",
+        "fileSize": 52,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.8673749999998108,
+      "timestamp": 1772080199940,
+      "metadata": {
+        "char": "m",
+        "fileSize": 53,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.817417000000205,
+      "timestamp": 1772080199955,
+      "metadata": {
+        "char": "p",
+        "fileSize": 54,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.8798749999987194,
+      "timestamp": 1772080199970,
+      "metadata": {
+        "char": "s",
+        "fileSize": 55,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 4.914291999999477,
+      "timestamp": 1772080199986,
+      "metadata": {
+        "char": "t",
+        "fileSize": 56,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 4.627583000001323,
+      "timestamp": 1772080200002,
+      "metadata": {
+        "char": "h",
+        "fileSize": 57,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.5054999999993015,
+      "timestamp": 1772080200015,
+      "metadata": {
+        "char": "e",
+        "fileSize": 58,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.5587500000001455,
+      "timestamp": 1772080200028,
+      "metadata": {
+        "char": " ",
+        "fileSize": 59,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.552708999999595,
+      "timestamp": 1772080200041,
+      "metadata": {
+        "char": "q",
+        "fileSize": 60,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.9315420000002632,
+      "timestamp": 1772080200055,
+      "metadata": {
+        "char": "u",
+        "fileSize": 61,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.5589159999999538,
+      "timestamp": 1772080200069,
+      "metadata": {
+        "char": "i",
+        "fileSize": 62,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 4.417750000000524,
+      "timestamp": 1772080200085,
+      "metadata": {
+        "char": "c",
+        "fileSize": 63,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 4.4007500000006985,
+      "timestamp": 1772080200102,
+      "metadata": {
+        "char": "k",
+        "fileSize": 64,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.405416999999943,
+      "timestamp": 1772080200113,
+      "metadata": {
+        "char": " ",
+        "fileSize": 65,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.9497080000001006,
+      "timestamp": 1772080200128,
+      "metadata": {
+        "char": "b",
+        "fileSize": 66,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.7553329999991547,
+      "timestamp": 1772080200143,
+      "metadata": {
+        "char": "r",
+        "fileSize": 67,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.6017089999986638,
+      "timestamp": 1772080200156,
+      "metadata": {
+        "char": "o",
+        "fileSize": 68,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.6254160000007687,
+      "timestamp": 1772080200169,
+      "metadata": {
+        "char": "w",
+        "fileSize": 69,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.3121250000003783,
+      "timestamp": 1772080200182,
+      "metadata": {
+        "char": "n",
+        "fileSize": 70,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.5837499999997817,
+      "timestamp": 1772080200195,
+      "metadata": {
+        "char": " ",
+        "fileSize": 71,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.6881669999984297,
+      "timestamp": 1772080200208,
+      "metadata": {
+        "char": "f",
+        "fileSize": 72,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.7057920000006561,
+      "timestamp": 1772080200223,
+      "metadata": {
+        "char": "o",
+        "fileSize": 73,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 2.5687920000000304,
+      "timestamp": 1772080200236,
+      "metadata": {
+        "char": "x",
+        "fileSize": 74,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.286459000000832,
+      "timestamp": 1772080200248,
+      "metadata": {
+        "char": " ",
+        "fileSize": 75,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.9428750000006403,
+      "timestamp": 1772080200262,
+      "metadata": {
+        "char": "j",
+        "fileSize": 76,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.8372089999993477,
+      "timestamp": 1772080200277,
+      "metadata": {
+        "char": "u",
+        "fileSize": 77,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.690999999998894,
+      "timestamp": 1772080200289,
+      "metadata": {
+        "char": "m",
+        "fileSize": 78,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.8114999999997963,
+      "timestamp": 1772080200302,
+      "metadata": {
+        "char": "p",
+        "fileSize": 79,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 3.5251250000001164,
+      "timestamp": 1772080200318,
+      "metadata": {
+        "char": "s",
+        "fileSize": 80,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.3609999999989668,
+      "timestamp": 1772080200331,
+      "metadata": {
+        "char": "t",
+        "fileSize": 81,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.9655000000002474,
+      "timestamp": 1772080200345,
+      "metadata": {
+        "char": "h",
+        "fileSize": 82,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.8627080000005662,
+      "timestamp": 1772080200360,
+      "metadata": {
+        "char": "e",
+        "fileSize": 83,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.7847920000003796,
+      "timestamp": 1772080200375,
+      "metadata": {
+        "char": " ",
+        "fileSize": 84,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.607625000000553,
+      "timestamp": 1772080200388,
+      "metadata": {
+        "char": "q",
+        "fileSize": 85,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.4758750000000873,
+      "timestamp": 1772080200402,
+      "metadata": {
+        "char": "u",
+        "fileSize": 86,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 4.186417000000802,
+      "timestamp": 1772080200419,
+      "metadata": {
+        "char": "i",
+        "fileSize": 87,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.2761250000003201,
+      "timestamp": 1772080200431,
+      "metadata": {
+        "char": "c",
+        "fileSize": 88,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.7460419999988517,
+      "timestamp": 1772080200446,
+      "metadata": {
+        "char": "k",
+        "fileSize": 89,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.7690419999998994,
+      "timestamp": 1772080200461,
+      "metadata": {
+        "char": " ",
+        "fileSize": 90,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.5285000000003492,
+      "timestamp": 1772080200474,
+      "metadata": {
+        "char": "b",
+        "fileSize": 91,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 2.015292000000045,
+      "timestamp": 1772080200487,
+      "metadata": {
+        "char": "r",
+        "fileSize": 92,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 2.668916000000536,
+      "timestamp": 1772080200502,
+      "metadata": {
+        "char": "o",
+        "fileSize": 93,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 4.842416999999841,
+      "timestamp": 1772080200519,
+      "metadata": {
+        "char": "w",
+        "fileSize": 94,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 4.73083299999962,
+      "timestamp": 1772080200536,
+      "metadata": {
+        "char": "n",
+        "fileSize": 95,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.3800000000010186,
+      "timestamp": 1772080200549,
+      "metadata": {
+        "char": " ",
+        "fileSize": 96,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.8385419999995065,
+      "timestamp": 1772080200562,
+      "metadata": {
+        "char": "f",
+        "fileSize": 97,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.8659160000006523,
+      "timestamp": 1772080200577,
+      "metadata": {
+        "char": "o",
+        "fileSize": 98,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.5261659999996482,
+      "timestamp": 1772080200591,
+      "metadata": {
+        "char": "x",
+        "fileSize": 99,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.473374999999578,
+      "timestamp": 1772080200604,
+      "metadata": {
+        "char": " ",
+        "fileSize": 100,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.642083000000639,
+      "timestamp": 1772080200618,
+      "metadata": {
+        "char": "j",
+        "fileSize": 101,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.2050830000007409,
+      "timestamp": 1772080200631,
+      "metadata": {
+        "char": "u",
+        "fileSize": 102,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.7540830000016285,
+      "timestamp": 1772080200646,
+      "metadata": {
+        "char": "m",
+        "fileSize": 103,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.8542919999999867,
+      "timestamp": 1772080200660,
+      "metadata": {
+        "char": "p",
+        "fileSize": 104,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_baseline",
+      "duration": 1.5566250000010768,
+      "timestamp": 1772080200674,
+      "metadata": {
+        "char": "s",
+        "fileSize": 105,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "bulk_insert_baseline",
+      "duration": 2.5998749999998836,
+      "timestamp": 1772080200688,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "bulk_insert_baseline",
+      "duration": 1.6859170000006998,
+      "timestamp": 1772080200746,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "bulk_insert_baseline",
+      "duration": 1.3803750000006403,
+      "timestamp": 1772080200799,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "bulk_insert_baseline",
+      "duration": 1.815083000001323,
+      "timestamp": 1772080200860,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 3,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "bulk_insert_baseline",
+      "duration": 2.0548340000004828,
+      "timestamp": 1772080200917,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 4,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "bulk_insert_baseline",
+      "duration": 3.7570829999986017,
+      "timestamp": 1772080200977,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 5,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "bulk_insert_baseline",
+      "duration": 4.115124999998443,
+      "timestamp": 1772080201040,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 6,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "bulk_insert_baseline",
+      "duration": 4.8460829999985435,
+      "timestamp": 1772080201103,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 7,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "bulk_insert_baseline",
+      "duration": 6.228833000001032,
+      "timestamp": 1772080201171,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 8,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "bulk_insert_baseline",
+      "duration": 1.9195419999996375,
+      "timestamp": 1772080201227,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 9,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 4.033666999999696,
+      "timestamp": 1772080201313,
+      "metadata": {
+        "iteration": 0,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 1.755708999999115,
+      "timestamp": 1772080201361,
+      "metadata": {
+        "iteration": 1,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 1.7173750000001746,
+      "timestamp": 1772080201415,
+      "metadata": {
+        "iteration": 2,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 2.3742910000000848,
+      "timestamp": 1772080201469,
+      "metadata": {
+        "iteration": 3,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 3.4069580000013957,
+      "timestamp": 1772080201526,
+      "metadata": {
+        "iteration": 4,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 2.47637499999837,
+      "timestamp": 1772080201578,
+      "metadata": {
+        "iteration": 5,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 2.458958999999595,
+      "timestamp": 1772080201632,
+      "metadata": {
+        "iteration": 6,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 4.79541700000118,
+      "timestamp": 1772080201686,
+      "metadata": {
+        "iteration": 7,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 2.3854579999988346,
+      "timestamp": 1772080201740,
+      "metadata": {
+        "iteration": 8,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 1.738083000000188,
+      "timestamp": 1772080201795,
+      "metadata": {
+        "iteration": 9,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 1.5192500000011933,
+      "timestamp": 1772080201846,
+      "metadata": {
+        "iteration": 10,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 1.5197079999998095,
+      "timestamp": 1772080201895,
+      "metadata": {
+        "iteration": 11,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 3.531416999998328,
+      "timestamp": 1772080201950,
+      "metadata": {
+        "iteration": 12,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 3.9172079999989364,
+      "timestamp": 1772080202004,
+      "metadata": {
+        "iteration": 13,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 2.629624999999578,
+      "timestamp": 1772080202059,
+      "metadata": {
+        "iteration": 14,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 2.311707999999271,
+      "timestamp": 1772080202114,
+      "metadata": {
+        "iteration": 15,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 2.2422910000004777,
+      "timestamp": 1772080202167,
+      "metadata": {
+        "iteration": 16,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 3.5812499999992724,
+      "timestamp": 1772080202218,
+      "metadata": {
+        "iteration": 17,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 3.9842919999991864,
+      "timestamp": 1772080202276,
+      "metadata": {
+        "iteration": 18,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "deletion_baseline",
+      "duration": 2.2200839999986783,
+      "timestamp": 1772080202323,
+      "metadata": {
+        "iteration": 19,
+        "tracked": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 87.56287499999962,
+      "timestamp": 1772080204418,
+      "metadata": {
+        "char": "t",
+        "fileSize": 21,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 61.683500000001004,
+      "timestamp": 1772080204493,
+      "metadata": {
+        "char": "h",
+        "fileSize": 22,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 59.37750000000051,
+      "timestamp": 1772080204563,
+      "metadata": {
+        "char": "e",
+        "fileSize": 23,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 57.42279199999939,
+      "timestamp": 1772080204634,
+      "metadata": {
+        "char": " ",
+        "fileSize": 24,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 55.79291699999885,
+      "timestamp": 1772080204701,
+      "metadata": {
+        "char": "q",
+        "fileSize": 25,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 57.737082999999984,
+      "timestamp": 1772080204772,
+      "metadata": {
+        "char": "u",
+        "fileSize": 26,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 59.41387500000019,
+      "timestamp": 1772080204841,
+      "metadata": {
+        "char": "i",
+        "fileSize": 27,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 55.50645900000018,
+      "timestamp": 1772080204910,
+      "metadata": {
+        "char": "c",
+        "fileSize": 28,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 59.642165999999634,
+      "timestamp": 1772080204980,
+      "metadata": {
+        "char": "k",
+        "fileSize": 29,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 57.35066700000061,
+      "timestamp": 1772080205048,
+      "metadata": {
+        "char": " ",
+        "fileSize": 30,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 59.399083000000246,
+      "timestamp": 1772080205120,
+      "metadata": {
+        "char": "b",
+        "fileSize": 31,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 59.1964169999992,
+      "timestamp": 1772080205192,
+      "metadata": {
+        "char": "r",
+        "fileSize": 32,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 58.095666999999594,
+      "timestamp": 1772080205261,
+      "metadata": {
+        "char": "o",
+        "fileSize": 33,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 56.874416000000565,
+      "timestamp": 1772080205331,
+      "metadata": {
+        "char": "w",
+        "fileSize": 34,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 53.98899999999958,
+      "timestamp": 1772080205398,
+      "metadata": {
+        "char": "n",
+        "fileSize": 35,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 55.07733299999927,
+      "timestamp": 1772080205466,
+      "metadata": {
+        "char": " ",
+        "fileSize": 36,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 58.62579199999891,
+      "timestamp": 1772080205534,
+      "metadata": {
+        "char": "f",
+        "fileSize": 37,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 58.62579199999891,
+      "timestamp": 1772080205606,
+      "metadata": {
+        "char": "o",
+        "fileSize": 38,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 59.71845899999971,
+      "timestamp": 1772080205677,
+      "metadata": {
+        "char": "x",
+        "fileSize": 39,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 59.24908300000061,
+      "timestamp": 1772080205748,
+      "metadata": {
+        "char": " ",
+        "fileSize": 40,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 55.79158300000017,
+      "timestamp": 1772080205814,
+      "metadata": {
+        "char": "j",
+        "fileSize": 41,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 54.80500000000029,
+      "timestamp": 1772080205881,
+      "metadata": {
+        "char": "u",
+        "fileSize": 42,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 54.49145800000042,
+      "timestamp": 1772080205947,
+      "metadata": {
+        "char": "m",
+        "fileSize": 43,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 57.7132500000007,
+      "timestamp": 1772080206017,
+      "metadata": {
+        "char": "p",
+        "fileSize": 44,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 57.11762500000077,
+      "timestamp": 1772080206087,
+      "metadata": {
+        "char": "s",
+        "fileSize": 45,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 56.68620799999917,
+      "timestamp": 1772080206154,
+      "metadata": {
+        "char": "t",
+        "fileSize": 46,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 54.675666000001,
+      "timestamp": 1772080206220,
+      "metadata": {
+        "char": "h",
+        "fileSize": 47,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 59.62054200000057,
+      "timestamp": 1772080206292,
+      "metadata": {
+        "char": "e",
+        "fileSize": 48,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 61.38908300000003,
+      "timestamp": 1772080206364,
+      "metadata": {
+        "char": " ",
+        "fileSize": 49,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 61.48841699999866,
+      "timestamp": 1772080206437,
+      "metadata": {
+        "char": "q",
+        "fileSize": 50,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 62.362082999999984,
+      "timestamp": 1772080206510,
+      "metadata": {
+        "char": "u",
+        "fileSize": 51,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 58.50529199999801,
+      "timestamp": 1772080206581,
+      "metadata": {
+        "char": "i",
+        "fileSize": 52,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 62.70308400000067,
+      "timestamp": 1772080206656,
+      "metadata": {
+        "char": "c",
+        "fileSize": 53,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 58.16145899999901,
+      "timestamp": 1772080206728,
+      "metadata": {
+        "char": "k",
+        "fileSize": 54,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 64.08504099999845,
+      "timestamp": 1772080206803,
+      "metadata": {
+        "char": " ",
+        "fileSize": 55,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 60.890833000001294,
+      "timestamp": 1772080206876,
+      "metadata": {
+        "char": "b",
+        "fileSize": 56,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 57.79249999999956,
+      "timestamp": 1772080206944,
+      "metadata": {
+        "char": "r",
+        "fileSize": 57,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 57.19874999999956,
+      "timestamp": 1772080207012,
+      "metadata": {
+        "char": "o",
+        "fileSize": 58,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 59.36616700000013,
+      "timestamp": 1772080207082,
+      "metadata": {
+        "char": "w",
+        "fileSize": 59,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 57.07800000000134,
+      "timestamp": 1772080207151,
+      "metadata": {
+        "char": "n",
+        "fileSize": 60,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 61.60974999999962,
+      "timestamp": 1772080207223,
+      "metadata": {
+        "char": " ",
+        "fileSize": 61,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 57.45141699999658,
+      "timestamp": 1772080207292,
+      "metadata": {
+        "char": "f",
+        "fileSize": 62,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 58.23358300000109,
+      "timestamp": 1772080207362,
+      "metadata": {
+        "char": "o",
+        "fileSize": 63,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 54.78900000000067,
+      "timestamp": 1772080207430,
+      "metadata": {
+        "char": "x",
+        "fileSize": 64,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 54.74462499999936,
+      "timestamp": 1772080207498,
+      "metadata": {
+        "char": " ",
+        "fileSize": 65,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 54.92262499999924,
+      "timestamp": 1772080207564,
+      "metadata": {
+        "char": "j",
+        "fileSize": 66,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 61.019249999997555,
+      "timestamp": 1772080207637,
+      "metadata": {
+        "char": "u",
+        "fileSize": 67,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 58.21970899999724,
+      "timestamp": 1772080207708,
+      "metadata": {
+        "char": "m",
+        "fileSize": 68,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 61.75520899999901,
+      "timestamp": 1772080207782,
+      "metadata": {
+        "char": "p",
+        "fileSize": 69,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 58.96554200000173,
+      "timestamp": 1772080207854,
+      "metadata": {
+        "char": "s",
+        "fileSize": 70,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 60.67204100000163,
+      "timestamp": 1772080207925,
+      "metadata": {
+        "char": "t",
+        "fileSize": 71,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 59.14479199999914,
+      "timestamp": 1772080207997,
+      "metadata": {
+        "char": "h",
+        "fileSize": 72,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 60.23504099999991,
+      "timestamp": 1772080208069,
+      "metadata": {
+        "char": "e",
+        "fileSize": 73,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 54.304542000001675,
+      "timestamp": 1772080208135,
+      "metadata": {
+        "char": " ",
+        "fileSize": 74,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 59.52845800000068,
+      "timestamp": 1772080208208,
+      "metadata": {
+        "char": "q",
+        "fileSize": 75,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 56.13020800000231,
+      "timestamp": 1772080208277,
+      "metadata": {
+        "char": "u",
+        "fileSize": 76,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 62.268583000000945,
+      "timestamp": 1772080208352,
+      "metadata": {
+        "char": "i",
+        "fileSize": 77,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 59.411041999999725,
+      "timestamp": 1772080208424,
+      "metadata": {
+        "char": "c",
+        "fileSize": 78,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 60.35316700000112,
+      "timestamp": 1772080208498,
+      "metadata": {
+        "char": "k",
+        "fileSize": 79,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 58.58404199999859,
+      "timestamp": 1772080208569,
+      "metadata": {
+        "char": " ",
+        "fileSize": 80,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 63.02249999999913,
+      "timestamp": 1772080208644,
+      "metadata": {
+        "char": "b",
+        "fileSize": 81,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 58.2677079999994,
+      "timestamp": 1772080208715,
+      "metadata": {
+        "char": "r",
+        "fileSize": 82,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 62.35737499999959,
+      "timestamp": 1772080208788,
+      "metadata": {
+        "char": "o",
+        "fileSize": 83,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 61.08525000000009,
+      "timestamp": 1772080208861,
+      "metadata": {
+        "char": "w",
+        "fileSize": 84,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 57.74433299999873,
+      "timestamp": 1772080208931,
+      "metadata": {
+        "char": "n",
+        "fileSize": 85,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 59.57970899999782,
+      "timestamp": 1772080209001,
+      "metadata": {
+        "char": " ",
+        "fileSize": 86,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 61.71674999999959,
+      "timestamp": 1772080209075,
+      "metadata": {
+        "char": "f",
+        "fileSize": 87,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 58.470250000002125,
+      "timestamp": 1772080209146,
+      "metadata": {
+        "char": "o",
+        "fileSize": 88,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 61.58300000000236,
+      "timestamp": 1772080209218,
+      "metadata": {
+        "char": "x",
+        "fileSize": 89,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 59.550749999998516,
+      "timestamp": 1772080209290,
+      "metadata": {
+        "char": " ",
+        "fileSize": 90,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 62.20154199999888,
+      "timestamp": 1772080209363,
+      "metadata": {
+        "char": "j",
+        "fileSize": 91,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 60.05737500000032,
+      "timestamp": 1772080209436,
+      "metadata": {
+        "char": "u",
+        "fileSize": 92,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 62.90825000000041,
+      "timestamp": 1772080209511,
+      "metadata": {
+        "char": "m",
+        "fileSize": 93,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 59.91625000000204,
+      "timestamp": 1772080209582,
+      "metadata": {
+        "char": "p",
+        "fileSize": 94,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_normal_insert",
+      "duration": 59.70245900000009,
+      "timestamp": 1772080209654,
+      "metadata": {
+        "char": "s",
+        "fileSize": 95,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": false
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 58.684250000002066,
+      "timestamp": 1772080209728,
+      "metadata": {
+        "char": "t",
+        "fileSize": 96,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 58.652500000000146,
+      "timestamp": 1772080209800,
+      "metadata": {
+        "char": "h",
+        "fileSize": 97,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 56.80899999999747,
+      "timestamp": 1772080209870,
+      "metadata": {
+        "char": "e",
+        "fileSize": 98,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 59.696124999998574,
+      "timestamp": 1772080209943,
+      "metadata": {
+        "char": " ",
+        "fileSize": 99,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 59.17037500000151,
+      "timestamp": 1772080210013,
+      "metadata": {
+        "char": "q",
+        "fileSize": 100,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 66.75433300000077,
+      "timestamp": 1772080210092,
+      "metadata": {
+        "char": "u",
+        "fileSize": 101,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 59.57837500000096,
+      "timestamp": 1772080210164,
+      "metadata": {
+        "char": "i",
+        "fileSize": 102,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 62.433209000002535,
+      "timestamp": 1772080210239,
+      "metadata": {
+        "char": "c",
+        "fileSize": 103,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 61.48354100000142,
+      "timestamp": 1772080210313,
+      "metadata": {
+        "char": "k",
+        "fileSize": 104,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 63.26016600000003,
+      "timestamp": 1772080210389,
+      "metadata": {
+        "char": " ",
+        "fileSize": 105,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 60.478125000001455,
+      "timestamp": 1772080210461,
+      "metadata": {
+        "char": "b",
+        "fileSize": 106,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 58.151582999998936,
+      "timestamp": 1772080210530,
+      "metadata": {
+        "char": "r",
+        "fileSize": 107,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 54.42533299999923,
+      "timestamp": 1772080210597,
+      "metadata": {
+        "char": "o",
+        "fileSize": 108,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 56.1418330000015,
+      "timestamp": 1772080210665,
+      "metadata": {
+        "char": "w",
+        "fileSize": 109,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 52.5245419999992,
+      "timestamp": 1772080210731,
+      "metadata": {
+        "char": "n",
+        "fileSize": 110,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 58.33191599999918,
+      "timestamp": 1772080210802,
+      "metadata": {
+        "char": " ",
+        "fileSize": 111,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 56.69295899999997,
+      "timestamp": 1772080210870,
+      "metadata": {
+        "char": "f",
+        "fileSize": 112,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 61.66049999999814,
+      "timestamp": 1772080210944,
+      "metadata": {
+        "char": "o",
+        "fileSize": 113,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 57.793416000000434,
+      "timestamp": 1772080211014,
+      "metadata": {
+        "char": "x",
+        "fileSize": 114,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 59.13116699999955,
+      "timestamp": 1772080211085,
+      "metadata": {
+        "char": " ",
+        "fileSize": 115,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 58.451875000002474,
+      "timestamp": 1772080211154,
+      "metadata": {
+        "char": "j",
+        "fileSize": 116,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 61.49162499999875,
+      "timestamp": 1772080211228,
+      "metadata": {
+        "char": "u",
+        "fileSize": 117,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 59.48741599999994,
+      "timestamp": 1772080211300,
+      "metadata": {
+        "char": "m",
+        "fileSize": 118,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 61.46695899999759,
+      "timestamp": 1772080211372,
+      "metadata": {
+        "char": "p",
+        "fileSize": 119,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 59.28258300000016,
+      "timestamp": 1772080211443,
+      "metadata": {
+        "char": "s",
+        "fileSize": 120,
+        "iteration": 0,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 61.687417000001005,
+      "timestamp": 1772080211518,
+      "metadata": {
+        "char": "t",
+        "fileSize": 121,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 58.24958400000105,
+      "timestamp": 1772080211588,
+      "metadata": {
+        "char": "h",
+        "fileSize": 122,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 61.55262500000026,
+      "timestamp": 1772080211662,
+      "metadata": {
+        "char": "e",
+        "fileSize": 123,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 57.76616699999795,
+      "timestamp": 1772080211731,
+      "metadata": {
+        "char": " ",
+        "fileSize": 124,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 61.55649999999878,
+      "timestamp": 1772080211805,
+      "metadata": {
+        "char": "q",
+        "fileSize": 125,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 58.340250000001106,
+      "timestamp": 1772080211876,
+      "metadata": {
+        "char": "u",
+        "fileSize": 126,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 60.52408399999695,
+      "timestamp": 1772080211948,
+      "metadata": {
+        "char": "i",
+        "fileSize": 127,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 57.960707999998704,
+      "timestamp": 1772080212016,
+      "metadata": {
+        "char": "c",
+        "fileSize": 128,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 62.63695799999914,
+      "timestamp": 1772080212091,
+      "metadata": {
+        "char": "k",
+        "fileSize": 129,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 60.02216699999917,
+      "timestamp": 1772080212163,
+      "metadata": {
+        "char": " ",
+        "fileSize": 130,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 57.745834000001196,
+      "timestamp": 1772080212233,
+      "metadata": {
+        "char": "b",
+        "fileSize": 131,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 57.24141700000109,
+      "timestamp": 1772080212302,
+      "metadata": {
+        "char": "r",
+        "fileSize": 132,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 59.88716700000077,
+      "timestamp": 1772080212373,
+      "metadata": {
+        "char": "o",
+        "fileSize": 133,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 57.45720900000015,
+      "timestamp": 1772080212443,
+      "metadata": {
+        "char": "w",
+        "fileSize": 134,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 61.23120800000106,
+      "timestamp": 1772080212517,
+      "metadata": {
+        "char": "n",
+        "fileSize": 135,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 58.53570800000307,
+      "timestamp": 1772080212587,
+      "metadata": {
+        "char": " ",
+        "fileSize": 136,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 59.138082999998005,
+      "timestamp": 1772080212659,
+      "metadata": {
+        "char": "f",
+        "fileSize": 137,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 59.31566699999894,
+      "timestamp": 1772080212731,
+      "metadata": {
+        "char": "o",
+        "fileSize": 138,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 61.677167000001646,
+      "timestamp": 1772080212804,
+      "metadata": {
+        "char": "x",
+        "fileSize": 139,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 61.09504200000083,
+      "timestamp": 1772080212877,
+      "metadata": {
+        "char": " ",
+        "fileSize": 140,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 58.53154200000063,
+      "timestamp": 1772080212949,
+      "metadata": {
+        "char": "j",
+        "fileSize": 141,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 56.23408300000301,
+      "timestamp": 1772080213017,
+      "metadata": {
+        "char": "u",
+        "fileSize": 142,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 62.33979099999851,
+      "timestamp": 1772080213093,
+      "metadata": {
+        "char": "m",
+        "fileSize": 143,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 59.276999999998225,
+      "timestamp": 1772080213165,
+      "metadata": {
+        "char": "p",
+        "fileSize": 144,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 58.358000000000175,
+      "timestamp": 1772080213235,
+      "metadata": {
+        "char": "s",
+        "fileSize": 145,
+        "iteration": 1,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 56.98466600000029,
+      "timestamp": 1772080213304,
+      "metadata": {
+        "char": "t",
+        "fileSize": 146,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 58.26941699999952,
+      "timestamp": 1772080213375,
+      "metadata": {
+        "char": "h",
+        "fileSize": 147,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 57.640416000002006,
+      "timestamp": 1772080213446,
+      "metadata": {
+        "char": "e",
+        "fileSize": 148,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 61.405792000001384,
+      "timestamp": 1772080213520,
+      "metadata": {
+        "char": " ",
+        "fileSize": 149,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 58.55408300000272,
+      "timestamp": 1772080213591,
+      "metadata": {
+        "char": "q",
+        "fileSize": 150,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 60.41474999999991,
+      "timestamp": 1772080213664,
+      "metadata": {
+        "char": "u",
+        "fileSize": 151,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 59.50712500000009,
+      "timestamp": 1772080213736,
+      "metadata": {
+        "char": "i",
+        "fileSize": 152,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 60.20833300000231,
+      "timestamp": 1772080213809,
+      "metadata": {
+        "char": "c",
+        "fileSize": 153,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 58.24250000000029,
+      "timestamp": 1772080213879,
+      "metadata": {
+        "char": "k",
+        "fileSize": 154,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 60.46116600000096,
+      "timestamp": 1772080213950,
+      "metadata": {
+        "char": " ",
+        "fileSize": 155,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 57.314542000000074,
+      "timestamp": 1772080214020,
+      "metadata": {
+        "char": "b",
+        "fileSize": 156,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 57.479167000001326,
+      "timestamp": 1772080214089,
+      "metadata": {
+        "char": "r",
+        "fileSize": 157,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 56.92345800000112,
+      "timestamp": 1772080214158,
+      "metadata": {
+        "char": "o",
+        "fileSize": 158,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 61.666417000000365,
+      "timestamp": 1772080214230,
+      "metadata": {
+        "char": "w",
+        "fileSize": 159,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 59.77495800000179,
+      "timestamp": 1772080214302,
+      "metadata": {
+        "char": "n",
+        "fileSize": 160,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 59.64824999999837,
+      "timestamp": 1772080214374,
+      "metadata": {
+        "char": " ",
+        "fileSize": 161,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 63.64229200000045,
+      "timestamp": 1772080214450,
+      "metadata": {
+        "char": "f",
+        "fileSize": 162,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 62.10754199999792,
+      "timestamp": 1772080214523,
+      "metadata": {
+        "char": "o",
+        "fileSize": 163,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 57.89758399999846,
+      "timestamp": 1772080214593,
+      "metadata": {
+        "char": "x",
+        "fileSize": 164,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 58.368875000000116,
+      "timestamp": 1772080214664,
+      "metadata": {
+        "char": " ",
+        "fileSize": 165,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 68.17266699999891,
+      "timestamp": 1772080214743,
+      "metadata": {
+        "char": "j",
+        "fileSize": 166,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 61.625208000001294,
+      "timestamp": 1772080214818,
+      "metadata": {
+        "char": "u",
+        "fileSize": 167,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 59.48908300000039,
+      "timestamp": 1772080214889,
+      "metadata": {
+        "char": "m",
+        "fileSize": 168,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 59.87583299999824,
+      "timestamp": 1772080214960,
+      "metadata": {
+        "char": "p",
+        "fileSize": 169,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "keystroke_tracked_debug_insert",
+      "duration": 58.09412499999962,
+      "timestamp": 1772080215030,
+      "metadata": {
+        "char": "s",
+        "fileSize": 170,
+        "iteration": 2,
+        "tracked": true,
+        "debugInsertMode": true
+      }
+    },
+    {
+      "operation": "bulk_insert_tracked",
+      "duration": 75.86054200000217,
+      "timestamp": 1772080215121,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 0,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "bulk_insert_tracked",
+      "duration": 59.177249999997,
+      "timestamp": 1772080215236,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 1,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "bulk_insert_tracked",
+      "duration": 57.54320799999914,
+      "timestamp": 1772080215352,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 2,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "bulk_insert_tracked",
+      "duration": 57.75891599999886,
+      "timestamp": 1772080215468,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 3,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "bulk_insert_tracked",
+      "duration": 54.30050000000119,
+      "timestamp": 1772080215581,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 4,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "bulk_insert_tracked",
+      "duration": 59.744041999998444,
+      "timestamp": 1772080215700,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 5,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "bulk_insert_tracked",
+      "duration": 54.73858299999847,
+      "timestamp": 1772080215814,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 6,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "bulk_insert_tracked",
+      "duration": 57.36791699999958,
+      "timestamp": 1772080215931,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 7,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "bulk_insert_tracked",
+      "duration": 59.86941599999773,
+      "timestamp": 1772080216052,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 8,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "bulk_insert_tracked",
+      "duration": 56.89925000000221,
+      "timestamp": 1772080216164,
+      "metadata": {
+        "textLength": 1000,
+        "iteration": 9,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 59.81974999999875,
+      "timestamp": 1772080216315,
+      "metadata": {
+        "iteration": 0,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 57.5726250000007,
+      "timestamp": 1772080216421,
+      "metadata": {
+        "iteration": 1,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 58.635957999998936,
+      "timestamp": 1772080216530,
+      "metadata": {
+        "iteration": 2,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 58.75433400000111,
+      "timestamp": 1772080216639,
+      "metadata": {
+        "iteration": 3,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 63.54841700000179,
+      "timestamp": 1772080216756,
+      "metadata": {
+        "iteration": 4,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 58.295625000002474,
+      "timestamp": 1772080216865,
+      "metadata": {
+        "iteration": 5,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 58.90229199999885,
+      "timestamp": 1772080216975,
+      "metadata": {
+        "iteration": 6,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 58.572000000000116,
+      "timestamp": 1772080217086,
+      "metadata": {
+        "iteration": 7,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 58.031708000002254,
+      "timestamp": 1772080217197,
+      "metadata": {
+        "iteration": 8,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 59.079625000002125,
+      "timestamp": 1772080217308,
+      "metadata": {
+        "iteration": 9,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 59.749665999999706,
+      "timestamp": 1772080217419,
+      "metadata": {
+        "iteration": 10,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 56.5110829999976,
+      "timestamp": 1772080217528,
+      "metadata": {
+        "iteration": 11,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 59.46033299999908,
+      "timestamp": 1772080217640,
+      "metadata": {
+        "iteration": 12,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 59.20799999999872,
+      "timestamp": 1772080217750,
+      "metadata": {
+        "iteration": 13,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 57.63295800000196,
+      "timestamp": 1772080217859,
+      "metadata": {
+        "iteration": 14,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 58.64800000000105,
+      "timestamp": 1772080217970,
+      "metadata": {
+        "iteration": 15,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 56.807708000000275,
+      "timestamp": 1772080218080,
+      "metadata": {
+        "iteration": 16,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 62.87924999999814,
+      "timestamp": 1772080218195,
+      "metadata": {
+        "iteration": 17,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 59.77087499999834,
+      "timestamp": 1772080218306,
+      "metadata": {
+        "iteration": 18,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "deletion_tracked",
+      "duration": 58.74333300000217,
+      "timestamp": 1772080218418,
+      "metadata": {
+        "iteration": 19,
+        "tracked": true
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 37.630166999999346,
+      "timestamp": 1772080220324,
+      "metadata": {
+        "iteration": 0
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 35.47458299999926,
+      "timestamp": 1772080220359,
+      "metadata": {
+        "iteration": 1
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 22.666791000003286,
+      "timestamp": 1772080220382,
+      "metadata": {
+        "iteration": 2
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 49.225375000001804,
+      "timestamp": 1772080220431,
+      "metadata": {
+        "iteration": 3
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 27.20258300000205,
+      "timestamp": 1772080220458,
+      "metadata": {
+        "iteration": 4
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 34.06233300000167,
+      "timestamp": 1772080220492,
+      "metadata": {
+        "iteration": 5
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 24.64249999999811,
+      "timestamp": 1772080220517,
+      "metadata": {
+        "iteration": 6
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 29.669583999999304,
+      "timestamp": 1772080220547,
+      "metadata": {
+        "iteration": 7
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 27.081665999998222,
+      "timestamp": 1772080220574,
+      "metadata": {
+        "iteration": 8
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 27.236541000002035,
+      "timestamp": 1772080220601,
+      "metadata": {
+        "iteration": 9
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 22.975666000002093,
+      "timestamp": 1772080220624,
+      "metadata": {
+        "iteration": 10
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 27.84320899999875,
+      "timestamp": 1772080220652,
+      "metadata": {
+        "iteration": 11
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 33.39683399999922,
+      "timestamp": 1772080220685,
+      "metadata": {
+        "iteration": 12
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 35.55749999999898,
+      "timestamp": 1772080220721,
+      "metadata": {
+        "iteration": 13
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 39.98291700000118,
+      "timestamp": 1772080220761,
+      "metadata": {
+        "iteration": 14
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 38.86670800000138,
+      "timestamp": 1772080220800,
+      "metadata": {
+        "iteration": 15
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 42.78387500000099,
+      "timestamp": 1772080220843,
+      "metadata": {
+        "iteration": 16
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 50.869833000000654,
+      "timestamp": 1772080220893,
+      "metadata": {
+        "iteration": 17
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 41.38804099999834,
+      "timestamp": 1772080220935,
+      "metadata": {
+        "iteration": 18
+      }
+    },
+    {
+      "operation": "debug_mode_toggle",
+      "duration": 64.91037499999948,
+      "timestamp": 1772080221000,
+      "metadata": {
+        "iteration": 19
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.07545799999934388,
+      "timestamp": 1772080221000,
+      "metadata": {
+        "iteration": 0
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.07270799999969313,
+      "timestamp": 1772080221001,
+      "metadata": {
+        "iteration": 1
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.07237499999973807,
+      "timestamp": 1772080221001,
+      "metadata": {
+        "iteration": 2
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.07050000000162981,
+      "timestamp": 1772080221001,
+      "metadata": {
+        "iteration": 3
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.07337499999994179,
+      "timestamp": 1772080221001,
+      "metadata": {
+        "iteration": 4
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.07191600000078324,
+      "timestamp": 1772080221001,
+      "metadata": {
+        "iteration": 5
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.06904099999883329,
+      "timestamp": 1772080221001,
+      "metadata": {
+        "iteration": 6
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.06554099999993923,
+      "timestamp": 1772080221001,
+      "metadata": {
+        "iteration": 7
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.06679200000144192,
+      "timestamp": 1772080221001,
+      "metadata": {
+        "iteration": 8
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.06787500000064028,
+      "timestamp": 1772080221001,
+      "metadata": {
+        "iteration": 9
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.06920800000079907,
+      "timestamp": 1772080221001,
+      "metadata": {
+        "iteration": 10
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.07762500000171713,
+      "timestamp": 1772080221001,
+      "metadata": {
+        "iteration": 11
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.06929099999979371,
+      "timestamp": 1772080221001,
+      "metadata": {
+        "iteration": 12
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.08208300000114832,
+      "timestamp": 1772080221001,
+      "metadata": {
+        "iteration": 13
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.07295799999701558,
+      "timestamp": 1772080221001,
+      "metadata": {
+        "iteration": 14
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.07087500000125146,
+      "timestamp": 1772080221002,
+      "metadata": {
+        "iteration": 15
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.06949999999778811,
+      "timestamp": 1772080221002,
+      "metadata": {
+        "iteration": 16
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.07183400000212714,
+      "timestamp": 1772080221002,
+      "metadata": {
+        "iteration": 17
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.07079199999861885,
+      "timestamp": 1772080221002,
+      "metadata": {
+        "iteration": 18
+      }
+    },
+    {
+      "operation": "insert_mode_toggle",
+      "duration": 0.06966599999941536,
+      "timestamp": 1772080221002,
+      "metadata": {
+        "iteration": 19
+      }
+    },
+    {
+      "operation": "file_open",
+      "duration": 0.10929199999736738,
+      "timestamp": 1772080221063,
+      "metadata": {
+        "lineCount": 100,
+        "fileSize": 8099
+      }
+    },
+    {
+      "operation": "keystroke_by_size",
+      "duration": 39.439416999997775,
+      "timestamp": 1772080221102,
+      "metadata": {
+        "lineCount": 100,
+        "fileSize": 8099
+      }
+    },
+    {
+      "operation": "file_open",
+      "duration": 0.06316599999991013,
+      "timestamp": 1772080222794,
+      "metadata": {
+        "lineCount": 500,
+        "fileSize": 40499
+      }
+    },
+    {
+      "operation": "keystroke_by_size",
+      "duration": 42.05266699999629,
+      "timestamp": 1772080222836,
+      "metadata": {
+        "lineCount": 500,
+        "fileSize": 40499
+      }
+    },
+    {
+      "operation": "file_open",
+      "duration": 0.05554100000153994,
+      "timestamp": 1772080224359,
+      "metadata": {
+        "lineCount": 1000,
+        "fileSize": 80999
+      }
+    },
+    {
+      "operation": "keystroke_by_size",
+      "duration": 26.42487500000425,
+      "timestamp": 1772080224386,
+      "metadata": {
+        "lineCount": 1000,
+        "fileSize": 80999
+      }
+    },
+    {
+      "operation": "file_open",
+      "duration": 0.06620799999654992,
+      "timestamp": 1772080225399,
+      "metadata": {
+        "lineCount": 5000,
+        "fileSize": 404999
+      }
+    },
+    {
+      "operation": "keystroke_by_size",
+      "duration": 28.43045799999527,
+      "timestamp": 1772080225428,
+      "metadata": {
+        "lineCount": 5000,
+        "fileSize": 404999
+      }
+    },
+    {
+      "operation": "file_open",
+      "duration": 0.07620899999892572,
+      "timestamp": 1772080226427,
+      "metadata": {
+        "lineCount": 10000,
+        "fileSize": 809999
+      }
+    },
+    {
+      "operation": "keystroke_by_size",
+      "duration": 66.51437499999884,
+      "timestamp": 1772080226493,
+      "metadata": {
+        "lineCount": 10000,
+        "fileSize": 809999
+      }
+    },
+    {
+      "operation": "highlight_render",
+      "duration": 0.1430419999960577,
+      "timestamp": 1772080227450,
+      "metadata": {
+        "debugSegmentCount": 1,
+        "lineCount": 1000
+      }
+    },
+    {
+      "operation": "highlight_render",
+      "duration": 0.08029100000567269,
+      "timestamp": 1772080227830,
+      "metadata": {
+        "debugSegmentCount": 10,
+        "lineCount": 1000
+      }
+    },
+    {
+      "operation": "highlight_render",
+      "duration": 0.0922500000015134,
+      "timestamp": 1772080228199,
+      "metadata": {
+        "debugSegmentCount": 50,
+        "lineCount": 1000
+      }
+    },
+    {
+      "operation": "highlight_render",
+      "duration": 0.0718330000017886,
+      "timestamp": 1772080228568,
+      "metadata": {
+        "debugSegmentCount": 100,
+        "lineCount": 1000
+      }
+    },
+    {
+      "operation": "highlight_render",
+      "duration": 0.06608299999788869,
+      "timestamp": 1772080228929,
+      "metadata": {
+        "debugSegmentCount": 500,
+        "lineCount": 1000
+      }
+    }
+  ],
+  "summaries": {
+    "keystroke_baseline": {
+      "mean": 3.63199834666666,
+      "median": 1.8542919999999867,
+      "p95": 5.764166999999361,
+      "p99": 68.58708300000035,
+      "min": 1.2050830000007409,
+      "max": 68.58708300000035,
+      "stdDev": 8.27709522800129,
+      "count": 75
+    },
+    "bulk_insert_baseline": {
+      "mean": 3.040274999999929,
+      "median": 2.5998749999998836,
+      "p95": 6.228833000001032,
+      "p99": 6.228833000001032,
+      "min": 1.3803750000006403,
+      "max": 6.228833000001032,
+      "stdDev": 1.5365122356941603,
+      "count": 10
+    },
+    "deletion_baseline": {
+      "mean": 2.729956249999668,
+      "median": 2.458958999999595,
+      "p95": 4.79541700000118,
+      "p99": 4.79541700000118,
+      "min": 1.5192500000011933,
+      "max": 4.79541700000118,
+      "stdDev": 0.9415039245673161,
+      "count": 20
+    },
+    "keystroke_tracked_normal_insert": {
+      "mean": 59.23692058666658,
+      "median": 59.1964169999992,
+      "p95": 62.90825000000041,
+      "p99": 87.56287499999962,
+      "min": 53.98899999999958,
+      "max": 87.56287499999962,
+      "stdDev": 4.080172410197885,
+      "count": 75
+    },
+    "keystroke_tracked_debug_insert": {
+      "mean": 59.52217777333348,
+      "median": 59.28258300000016,
+      "p95": 63.26016600000003,
+      "p99": 68.17266699999891,
+      "min": 52.5245419999992,
+      "max": 68.17266699999891,
+      "stdDev": 2.3934185811228454,
+      "count": 75
+    },
+    "bulk_insert_tracked": {
+      "mean": 59.32596239999948,
+      "median": 57.75891599999886,
+      "p95": 75.86054200000217,
+      "p99": 75.86054200000217,
+      "min": 54.30050000000119,
+      "max": 75.86054200000217,
+      "stdDev": 5.792586770335105,
+      "count": 10
+    },
+    "deletion_tracked": {
+      "mean": 59.031177000000206,
+      "median": 58.75433400000111,
+      "p95": 63.54841700000179,
+      "p99": 63.54841700000179,
+      "min": 56.5110829999976,
+      "max": 63.54841700000179,
+      "stdDev": 1.6541336959402275,
+      "count": 20
+    },
+    "debug_mode_toggle": {
+      "mean": 35.673354050000306,
+      "median": 35.47458299999926,
+      "p95": 64.91037499999948,
+      "p99": 64.91037499999948,
+      "min": 22.666791000003286,
+      "max": 64.91037499999948,
+      "stdDev": 10.39045145517709,
+      "count": 20
+    },
+    "insert_mode_toggle": {
+      "mean": 0.07147065000008297,
+      "median": 0.07087500000125146,
+      "p95": 0.08208300000114832,
+      "p99": 0.08208300000114832,
+      "min": 0.06554099999993923,
+      "max": 0.08208300000114832,
+      "stdDev": 0.00367127757446785,
+      "count": 20
+    },
+    "file_open": {
+      "mean": 0.07408319999885862,
+      "median": 0.06620799999654992,
+      "p95": 0.10929199999736738,
+      "p99": 0.10929199999736738,
+      "min": 0.05554100000153994,
+      "max": 0.10929199999736738,
+      "stdDev": 0.01881061314582406,
+      "count": 5
+    },
+    "keystroke_by_size": {
+      "mean": 40.572358399998485,
+      "median": 39.439416999997775,
+      "p95": 66.51437499999884,
+      "p99": 66.51437499999884,
+      "min": 26.42487500000425,
+      "max": 66.51437499999884,
+      "stdDev": 14.311115448618724,
+      "count": 5
+    },
+    "highlight_render": {
+      "mean": 0.09069980000058422,
+      "median": 0.08029100000567269,
+      "p95": 0.1430419999960577,
+      "p99": 0.1430419999960577,
+      "min": 0.06608299999788869,
+      "max": 0.1430419999960577,
+      "stdDev": 0.02761302273316111,
+      "count": 5
+    }
+  },
+  "overheads": [
+    {
+      "name": "Keystroke Latency",
+      "baselineMean": 3.63199834666666,
+      "trackedMean": 59.23692058666658,
+      "overheadMs": 55.604922239999915,
+      "overheadPercent": 1530.9732255531576
+    },
+    {
+      "name": "Bulk Insert",
+      "baselineMean": 3.040274999999929,
+      "trackedMean": 59.32596239999948,
+      "overheadMs": 56.28568739999955,
+      "overheadPercent": 1851.3354022251563
+    },
+    {
+      "name": "Deletion",
+      "baselineMean": 2.729956249999668,
+      "trackedMean": 59.031177000000206,
+      "overheadMs": 56.30122075000054,
+      "overheadPercent": 2062.3488288505496
+    }
+  ]
+}

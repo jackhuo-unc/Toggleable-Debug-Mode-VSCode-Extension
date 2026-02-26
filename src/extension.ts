@@ -11,6 +11,8 @@ import { HiddenCodeOverlay } from './HiddenCodeOverlay';
 import { MetadataManager } from './MetadataManager';
 import { UndoRedoManager } from './UndoRedoManager';
 
+import { runAllPerformanceTests } from './test/RunPerformanceTest';
+
 // let trackerManager: TrackerManager | null = null;
 let metadataManager: MetadataManager | null = null;
 let overlayManager: HiddenCodeOverlay | null = null;
@@ -44,42 +46,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		uiManager?.updateStatusBar();
 	})
 
-
-	// // 4. Register extension commands here
-	// context.subscriptions.push( //This command is for TrackerManager
-	// 	vscode.commands.registerCommand('catCoding.start', () => {
-	// 		const panel = vscode.window.createWebviewPanel(
-	// 			'catCoding',
-	// 			'Action Tracking',
-	// 			vscode.ViewColumn.One,
-	// 			{
-	// 				enableScripts: true
-	// 			}
-	// 		);
-	// 		let username = LogNameManager.readUsername();
-	// 		panel.webview.html = getWebviewContent();
-	// 		panel.webview.postMessage({
-	// 			username: username,
-	// 		});
-	// 		// Handle messages from the webview
-	// 		panel.webview.onDidReceiveMessage(
-	// 			message => {
-	// 				console.log(message);
-	// 				LogNameManager.updateUsername(message);
-	// 			},
-	// 			undefined,
-	// 			context.subscriptions
-	// 		);
-	// 	})
-	// );
-
 	context.subscriptions.push(
         vscode.commands.registerCommand('hiddenOverlay.toggleDebugMode', async () => {
             // Record state BEFORE toggle for all open documents
             const editor = vscode.window.activeTextEditor;
-            // if (editor) {
-            //     undoRedoManager?.recordModeToggle(editor.document.uri.fsPath);
-            // }
+            if (editor) {
+                undoRedoManager?.recordModeToggle(editor.document.uri.fsPath);
+            }
 			
 			await overlayManager?.toggleDebugMode();
             uiManager?.updateStatusBar();
@@ -88,6 +61,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	context.subscriptions.push(
         vscode.commands.registerCommand('hiddenOverlay.toggleInsertMode', async () => {
+			const editor = vscode.window.activeTextEditor;
+            if (editor) {
+                undoRedoManager?.recordInsertModeToggle(editor.document.uri.fsPath);
+            }
             await overlayManager?.toggleInsertMode();
             uiManager?.updateStatusBar();
         })
@@ -113,11 +90,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             if (!editor) return;
 			const filePath = editor.document.uri.fsPath;
 
-            const handled = await undoRedoManager?.undo(filePath);
-            // if (!handled) {
-            //     // Fall back to VS Code's built-in undo
-            //     await vscode.commands.executeCommand('default:undo');
-            // }
+			await undoRedoManager?.undo(filePath);
             uiManager?.updateStatusBar();
             overlayManager?.updateHighlightsForEditor(editor);
         })
@@ -130,11 +103,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             if (!editor) return;
 			const filePath = editor.document.uri.fsPath;
 
-            const handled = await undoRedoManager?.redo(filePath);
-            // if (!handled) {
-            //     // Fall back to VS Code's built-in redo
-            //     await vscode.commands.executeCommand('default:redo');
-            // }
+            await undoRedoManager?.redo(filePath);
             uiManager?.updateStatusBar();
             overlayManager?.updateHighlightsForEditor(editor);
         })
@@ -221,39 +190,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	console.log('[debug-toggle] activate() complete');
 
-	// // LogNameManager for tracker
-	// LogNameManager.initializeFileStore();
-	// if (LogNameManager.getStaticInfo() === null) {
-	// 	LogNameManager.setStaticInfo();
-	// 	LogNameManager.saveStaticInfo();
-	// } else {
-	// 	let infos = LogNameManager.getStaticInfo();
-	// 	LogNameManager.machineId = infos[0];
-	// 	LogNameManager.username = infos[1];
-	// }
-
-	// if (LogNameManager.getDynamicInfo() === null) {
-	// 	LogNameManager.setDynamicInfo();
-	// 	LogNameManager.saveDynamicInfo();
-	// } else {
-	// 	let infos = LogNameManager.getDynamicInfo();
-	// 	LogNameManager.courseID = infos[0];
-	// 	LogNameManager.assignmentID = infos[1];
-	// 	LogNameManager.logSessionID = infos[2];
-	// }
-
-	// // 14. Init Tracker Manager
-	// trackerManager = new TrackerManager();
-
-	// Setup log file for project under project directory
-	// if (!fs.existsSync(vscode.workspace.workspaceFolders[0].uri.fsPath + path.sep + "log")) {
-	// 	fs.mkdirSync(vscode.workspace.workspaceFolders[0].uri.fsPath + path.sep + "log");
-	// }
-
-	// trackerManager.editLogPath = vscode.workspace.workspaceFolders[0].uri.fsPath + path.sep + "log" + path.sep + 'editLog.json';
-
-	// await trackerManager.init();
-	// context.subscriptions.push(trackerManager);
+	context.subscriptions.push(
+        vscode.commands.registerCommand('hiddenOverlay.runPerformanceTests', async () => {
+            if (metadataManager && overlayManager) {
+                await runAllPerformanceTests(context, metadataManager, overlayManager);
+            }
+        })
+    );
 }
 
 function getWebviewContent() {
