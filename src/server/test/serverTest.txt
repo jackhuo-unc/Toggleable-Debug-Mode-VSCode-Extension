@@ -10,7 +10,7 @@ curl -s -X POST http://localhost:7654/session/init \
 curl -s -X POST http://localhost:7654/document/open \
   -H "Content-Type: application/json" \
   -d '{
-    "sessionId":"<PASTE_SESSION_ID>",
+    "sessionId":"SAMPLE-ID",
     "filePath":"/tmp/testproject/app.js",
     "content":"function main() {\n  console.log(\"hello\");\n}\n"
   }' | python3 -m json.tool
@@ -18,18 +18,18 @@ curl -s -X POST http://localhost:7654/document/open \
 # Toggle debug mode ON
 curl -s -X POST http://localhost:7654/mode/toggle \
   -H "Content-Type: application/json" \
-  -d '{"sessionId":"<PASTE_SESSION_ID>"}' | python3 -m json.tool
+  -d '{"sessionId":"SAMPLE-ID"}' | python3 -m json.tool
 
 # Toggle insert mode to DEBUG
 curl -s -X POST http://localhost:7654/mode/insert-toggle \
   -H "Content-Type: application/json" \
-  -d '{"sessionId":"<PASTE_SESSION_ID>"}' | python3 -m json.tool
+  -d '{"sessionId":"SAMPLE-ID"}' | python3 -m json.tool
 
 # Make an edit (insert debug code at offset 20)
 curl -s -X POST http://localhost:7654/document/change \
   -H "Content-Type: application/json" \
   -d '{
-    "sessionId":"<PASTE_SESSION_ID>",
+    "sessionId":"SAMPLE-ID",
     "filePath":"/tmp/testproject/app.js",
     "changes":[{"rangeOffset":20,"rangeLength":0,"text":"  // DEBUG LINE\n"}]
   }' | python3 -m json.tool
@@ -37,4 +37,4 @@ curl -s -X POST http://localhost:7654/document/change \
 # Toggle debug mode OFF — the debug line should disappear from displayContent
 curl -s -X POST http://localhost:7654/mode/toggle \
   -H "Content-Type: application/json" \
-  -d '{"sessionId":"<PASTE_SESSION_ID>"}' | python3 -m json.tool
+  -d '{"sessionId":"SAMPLE-ID"}' | python3 -m json.tool
