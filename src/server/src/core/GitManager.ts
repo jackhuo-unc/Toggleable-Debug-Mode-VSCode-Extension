@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { LedgerStore } from './LedgerStore';
 import { SegmentManager } from './SegmentManager';
-import { FileLedger, DebugMode, FileUpdate, DebugSegment } from '../types';
+import { FileLedger, DebugMode, FileUpdate } from '../types';
 
 /**
  * Manages a git repository inside the server's metadata-storage/<hash>/ directory.
@@ -115,8 +115,8 @@ export class GitManager {
             if (!ledger) continue;
 
             fileUpdates[filePath] = {
-                displayContent: this.segmentManager.buildTextForMode(ledger.segments, includeDebug),
-                debugSegments: this.segmentManager.getDebugSegments(ledger.segments, includeDebug),
+                segments: this.segmentManager.deepCopySegments(ledger.segments),
+                // debugSegments: this.segmentManager.getDebugSegments(ledger.segments, includeDebug),
             };
         }
 

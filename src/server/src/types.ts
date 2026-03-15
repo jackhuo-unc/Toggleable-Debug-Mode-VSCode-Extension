@@ -15,10 +15,10 @@ export interface FileLedger {
     version: number;
 }
 
-export interface DebugSegment {
-    start: number;  // inclusive offset in displayed text
-    end: number;    // exclusive offset in displayed text
-}
+// export interface DebugSegment {
+//     start: number;  // inclusive offset in displayed text
+//     end: number;    // exclusive offset in displayed text
+// }
 
 export type DebugMode = 'debugOn' | 'debugOff';
 export type InsertMode = 'insertDebug' | 'insertNormal';
@@ -53,8 +53,8 @@ export interface DocumentOpenRequest {
 }
 
 export interface DocumentOpenResponse {
-    debugSegments: DebugSegment[];
-    displayContent: string;
+    segments: TextSegment[];
+    // displayContent: string;
     debugMode: DebugMode;
     insertMode: InsertMode;
 }
@@ -73,8 +73,8 @@ export interface ContentChange {
 }
 
 export interface DocumentChangeResponse {
-    debugSegments: DebugSegment[];
-    displayContent: string;
+    segments: TextSegment[];
+    // displayContent: string;
 }
 
 /** POST /mode/toggle */
@@ -89,8 +89,8 @@ export interface ToggleModeResponse {
 }
 
 export interface FileUpdate {
-    displayContent: string;
-    debugSegments: DebugSegment[];
+    // displayContent: string;
+    segments: TextSegment[];
 }
 
 /** POST /mode/insert-toggle */
@@ -106,10 +106,10 @@ export interface ToggleInsertModeResponse {
 /** GET /document/segments?sessionId=X&filePath=Y */
 export interface GetSegmentsResponse {
     segments: TextSegment[];
-    debugSegments: DebugSegment[];
+    // debugSegments: DebugSegment[];
     debugMode: DebugMode;
     insertMode: InsertMode;
-    displayContent: string;
+    // displayContent: string;
 }
 
 /** POST /document/save — client saved a file */
@@ -152,9 +152,53 @@ export interface RedoRequest {
 
 export interface UndoRedoResponse {
     success: boolean;
-    displayContent: string;
-    debugSegments: DebugSegment[];
+    // displayContent: string;
+    segments: TextSegment[];
     debugMode: DebugMode;
     insertMode: InsertMode;
     cursorOffset: number;       // where the client should place the cursor
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Git sync types — mirror client git state into server metadata repo
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** POST /git/sync — client detected a git operation */
+export interface GitSyncRequest {
+    sessionId: string;
+    /** The branch name the client just switched to */
+    branch: string;
+    /** The commit hash (HEAD) on the client side */
+    headCommit: string;
+}
+
+export interface GitSyncResponse {
+    /** Whether the server successfully mirrored the branch */
+    synced: boolean;
+    /** Current branch on the server metadata repo */
+    serverBranch: string;
+    /** Files whose ledgers changed after the branch switch */
+    fileUpdates: Record<string, FileUpdate>;
+    /** Debug mode detected from the (possibly different) ledgers on this branch */
+    detectedDebugMode: DebugMode;
+}
+
+/** POST /git/init — ensure the server metadata repo is initialized */
+export interface GitInitRequest {
+    sessionId: string;
+}
+
+export interface GitInitResponse {
+    initialized: boolean;
+    metadataRepoPath: string;
+    currentBranch: string;
+}
+
+/** GET /git/status — check server metadata repo state */
+export interface GitStatusResponse {
+    initialized: boolean;
+    currentBranch: string;
+    headCommit: string;
+    trackedLedgerCount: number;
 }

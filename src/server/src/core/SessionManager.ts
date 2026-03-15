@@ -4,7 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 import {
     TextSegment,
     FileLedger,
-    DebugSegment,
     DebugMode,
     InsertMode,
     EditSnapshot,
@@ -15,6 +14,7 @@ import {
 import { SegmentManager } from './SegmentManager';
 import { LedgerStore } from './LedgerStore';
 import { PathUtils } from './PathUtils';
+import { GitManager } from './GitManager';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Per-file undo/redo history (ported from UndoRedoManager)
@@ -38,6 +38,7 @@ export interface Session {
     pathUtils: PathUtils;
     ledgerStore: LedgerStore;
     segmentManager: SegmentManager;
+    gitManager: GitManager;
     fileHistories: Map<string, FileHistory>;
     // Debounce state for undo grouping
     pendingSnapshots: Map<string, {
@@ -61,7 +62,7 @@ export class SessionManager {
         const pathUtils = new PathUtils(workspaceRoot);
         const ledgerStore = new LedgerStore(pathUtils);
         const segmentManager = new SegmentManager();
-
+        const gitManager = new GitManager(ledgerStore, segmentManager, pathUtils.getMetadataStorageRoot());
         const session: Session = {
             sessionId,
             clientId,
@@ -71,12 +72,15 @@ export class SessionManager {
             pathUtils,
             ledgerStore,
             segmentManager,
+            gitManager,
             fileHistories: new Map(),
             pendingSnapshots: new Map(),
         };
 
         // Scan for existing metadata on disk
         ledgerStore.scanWorkspace();
+
+        gitManager.ensureRepo();
 
         this.sessions.set(sessionId, session);
         console.log(`[SessionManager] Created session ${sessionId} for client "${clientId}", tracking ${ledgerStore.size()} files`);
@@ -113,15 +117,14 @@ export class SessionManager {
         filePath: string,
         content: string
     ): {
-        debugSegments: DebugSegment[];
-        displayContent: string;
+        segments: TextSegment[];
     } {
         const { ledgerStore, segmentManager, pathUtils } = session;
         const isDebugMode = session.debugMode === 'debugOn';
 
         if (!pathUtils.shouldTrackFile(filePath)) {
             // Not a trackable file — just return content as-is
-            return { debugSegments: [], displayContent: content };
+            return { segments: [{ text: content, isDebug: false }] };
         }
 
         let ledger = ledgerStore.get(filePath);
@@ -141,10 +144,10 @@ export class SessionManager {
             console.log('[SessionManager] Created new ledger for:', filePath);
         }
 
-        const displayContent = segmentManager.buildTextForMode(ledger.segments, isDebugMode);
-        const debugSegments = segmentManager.getDebugSegments(ledger.segments, isDebugMode);
+        // const displayContent = segmentManager.buildTextForMode(ledger.segments, isDebugMode);
+        // const debugSegments = segmentManager.getDebugSegments(ledger.segments, isDebugMode);
 
-        return { displayContent, debugSegments };
+        return { segments: segmentManager.deepCopySegments(ledger.segments) };
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -157,8 +160,7 @@ export class SessionManager {
         filePath: string,
         changes: ContentChange[]
     ): {
-        debugSegments: DebugSegment[];
-        displayContent: string;
+        segments: TextSegment[];
     } {
         const { ledgerStore, segmentManager } = session;
         const ledger = ledgerStore.get(filePath);
@@ -192,12 +194,12 @@ export class SessionManager {
         // Queue save
         ledgerStore.queueSave(filePath);
 
-        const displayContent = segmentManager.buildTextForMode(ledger.segments, isDebugMode);
-        const debugSegments = segmentManager.getDebugSegments(ledger.segments, isDebugMode);
+        // const displayContent = segmentManager.buildTextForMode(ledger.segments, isDebugMode);
+        // const debugSegments = segmentManager.getDebugSegments(ledger.segments, isDebugMode);
 
         console.log(`[SessionManager] Applied ${changes.length} changes to ${path.basename(filePath)}, ${ledger.segments.length} segments`);
 
-        return { displayContent, debugSegments };
+        return { segments: segmentManager.deepCopySegments(ledger.segments) };
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -230,19 +232,23 @@ export class SessionManager {
 
         // Rebuild display content for all tracked files
         for (const [filePath, ledger] of ledgerStore.entries()) {
-            const displayContent = segmentManager.buildTextForMode(ledger.segments, isDebugMode);
-            const debugSegments = segmentManager.getDebugSegments(ledger.segments, isDebugMode);
+            // const displayContent = segmentManager.buildTextForMode(ledger.segments, isDebugMode);
+            // const debugSegments = segmentManager.getDebugSegments(ledger.segments, isDebugMode);
 
             // Update saved mode state
             ledger.savedInDebugMode = isDebugMode;
 
+            // const displayContent = segmentManager.buildTextForMode(ledger.segments, isDebugMode);
+
             // Also write the rebuilt source file to disk
-            // (mirrors your HiddenCodeOverlay.applyDebugViewToAllFiles -> rebuildAndSaveFile)
-            this.writeSourceFile(filePath, displayContent);
+            // (mirrors HiddenCodeOverlay.applyDebugViewToAllFiles -> rebuildAndSaveFile)
+            // this.writeSourceFile(filePath, displayContent);
 
             ledgerStore.queueSave(filePath);
 
-            fileUpdates[filePath] = { displayContent, debugSegments };
+            fileUpdates[filePath] = {
+                segments: segmentManager.deepCopySegments(ledger.segments),
+            };
         }
 
         console.log(`[SessionManager] Toggled debug mode -> ${session.debugMode}, updated ${Object.keys(fileUpdates).length} files`);
@@ -286,17 +292,17 @@ export class SessionManager {
     // (replaces MetadataManager.rebuildAndSaveFile for the toggle case)
     // ─────────────────────────────────────────────────────────────────────────
 
-    private writeSourceFile(filePath: string, content: string): void {
-        try {
-            const dir = path.dirname(filePath);
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir, { recursive: true });
-            }
-            fs.writeFileSync(filePath, content, 'utf-8');
-        } catch (err) {
-            console.error('[SessionManager] Failed to write source file:', filePath, err);
-        }
-    }
+    // private writeSourceFile(filePath: string, content: string): void {
+    //     try {
+    //         const dir = path.dirname(filePath);
+    //         if (!fs.existsSync(dir)) {
+    //             fs.mkdirSync(dir, { recursive: true });
+    //         }
+    //         fs.writeFileSync(filePath, content, 'utf-8');
+    //     } catch (err) {
+    //         console.error('[SessionManager] Failed to write source file:', filePath, err);
+    //     }
+    // }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Document Close
@@ -331,8 +337,7 @@ export class SessionManager {
 
     public getDocumentState(session: Session, filePath: string): {
         segments: TextSegment[];
-        debugSegments: DebugSegment[];
-        displayContent: string;
+        // displayContent: string;
         debugMode: DebugMode;
         insertMode: InsertMode;
     } | null {
@@ -342,8 +347,8 @@ export class SessionManager {
         const isDebugMode = session.debugMode === 'debugOn';
         return {
             segments: ledger.segments,
-            debugSegments: session.segmentManager.getDebugSegments(ledger.segments, isDebugMode),
-            displayContent: session.segmentManager.buildTextForMode(ledger.segments, isDebugMode),
+            // debugSegments: session.segmentManager.getDebugSegments(ledger.segments, isDebugMode),
+            // displayContent: session.segmentManager.buildTextForMode(ledger.segments, isDebugMode),
             debugMode: session.debugMode,
             insertMode: session.insertMode,
         };
@@ -472,12 +477,12 @@ export class SessionManager {
             const isDebugMode = session.debugMode === 'debugOn';
             return {
                 success: false,
-                displayContent: ledger
-                    ? session.segmentManager.buildTextForMode(ledger.segments, isDebugMode)
-                    : '',
-                debugSegments: ledger
-                    ? session.segmentManager.getDebugSegments(ledger.segments, isDebugMode)
+                segments: ledger
+                    ? session.segmentManager.deepCopySegments(ledger.segments)
                     : [],
+                // debugSegments: ledger
+                //     ? session.segmentManager.getDebugSegments(ledger.segments, isDebugMode)
+                //     : [],
                 debugMode: session.debugMode,
                 insertMode: session.insertMode,
                 cursorOffset: currentCursorOffset,
@@ -514,12 +519,12 @@ export class SessionManager {
             const isDebugMode = session.debugMode === 'debugOn';
             return {
                 success: false,
-                displayContent: ledger
-                    ? session.segmentManager.buildTextForMode(ledger.segments, isDebugMode)
-                    : '',
-                debugSegments: ledger
-                    ? session.segmentManager.getDebugSegments(ledger.segments, isDebugMode)
+                segments: ledger
+                    ? session.segmentManager.deepCopySegments(ledger.segments)
                     : [],
+                // debugSegments: ledger
+                //     ? session.segmentManager.getDebugSegments(ledger.segments, isDebugMode)
+                //     : [],
                 debugMode: session.debugMode,
                 insertMode: session.insertMode,
                 cursorOffset: currentCursorOffset,
@@ -560,10 +565,10 @@ export class SessionManager {
 
         const isDebugMode = session.debugMode === 'debugOn';
         const displayContent = session.segmentManager.buildTextForMode(ledger.segments, isDebugMode);
-        const debugSegments = session.segmentManager.getDebugSegments(ledger.segments, isDebugMode);
+        // const debugSegments = session.segmentManager.getDebugSegments(ledger.segments, isDebugMode);
 
         // Write source file to disk
-        this.writeSourceFile(filePath, displayContent);
+        // this.writeSourceFile(filePath, displayContent);
 
         // Save ledger
         session.ledgerStore.queueSave(filePath);
@@ -574,8 +579,9 @@ export class SessionManager {
 
         return {
             success: true,
-            displayContent,
-            debugSegments,
+            // displayContent,
+            // debugSegments,
+            segments: session.segmentManager.deepCopySegments(ledger.segments),
             debugMode: session.debugMode,
             insertMode: session.insertMode,
             cursorOffset,

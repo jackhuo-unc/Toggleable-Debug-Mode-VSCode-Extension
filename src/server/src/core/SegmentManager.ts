@@ -1,4 +1,4 @@
-import { TextSegment, FileLedger, DebugSegment } from '../types';
+import { TextSegment, FileLedger } from '../types';
 
 /**
  * Pure segment logic — ported directly from src/metadata/SegmentManager.ts
@@ -189,34 +189,6 @@ export class SegmentManager {
             const deleteCount = endIdx - startIdx + 1;
             segments.splice(startIdx, deleteCount, ...newSegments);
         }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Debug Segment Ranges (for highlighting)
-    // Ported from your SegmentManager.getDebugSegmentsForDocument
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Returns debug segment offsets within the FULL text (debugOn view).
-     * When debugMode is off, there's nothing to highlight so returns [].
-     */
-    public getDebugSegments(segments: TextSegment[], isDebugMode: boolean): DebugSegment[] {
-        if (!isDebugMode) return [];
-
-        const result: DebugSegment[] = [];
-        let offset = 0;
-
-        for (const seg of segments) {
-            if (seg.isDebug) {
-                result.push({
-                    start: offset,
-                    end: offset + seg.text.length
-                });
-            }
-            offset += seg.text.length;
-        }
-
-        return result;
     }
 
     /**

@@ -18,6 +18,11 @@ import {
     UndoRequest,
     RedoRequest,
     UndoRedoResponse,
+    GitSyncRequest,
+    GitSyncResponse,
+    GitInitRequest,
+    GitInitResponse,
+    GitStatusResponse,
 } from './types';
 
 const app = express();
@@ -93,13 +98,13 @@ app.post('/document/open', (req: Request, res: Response) => {
     const result = sessionManager.openDocument(session, body.filePath, body.content ?? '');
 
     const response: DocumentOpenResponse = {
-        debugSegments: result.debugSegments,
-        displayContent: result.displayContent,
+        segments: result.segments,
+        // displayContent: result.displayContent,
         debugMode: session.debugMode,
         insertMode: session.insertMode,
     };
 
-    console.log(`[Server] POST /document/open -> ${body.filePath}, ${result.debugSegments.length} debug segments`);
+    console.log(`[Server] POST /document/open -> ${body.filePath}, ${result.segments.length} segments`);
     res.json(response);
 });
 
@@ -118,8 +123,8 @@ app.post('/document/change', (req: Request, res: Response) => {
         const result = sessionManager.applyChanges(session, body.filePath, body.changes);
 
         const response: DocumentChangeResponse = {
-            debugSegments: result.debugSegments,
-            displayContent: result.displayContent,
+            segments: result.segments,
+            // displayContent: result.displayContent,
         };
 
         res.json(response);
@@ -218,6 +223,82 @@ app.post('/redo', (req: Request, res: Response) => {
     console.log(`[Server] POST /redo -> success=${result.success}`);
     res.json(result);
 });
+
+/**
+ * POST /git/init
+ * Ensure the server-side metadata git repo is initialized.
+ * Called by the client on session start.
+ */
+app.post('/git/init', (req: Request, res: Response) => {
+    const session = requireSession(req, res);
+    if (!session) return;
+
+    const result = session.gitManager.ensureRepo();
+
+    const response: GitInitResponse = {
+        initialized: result.initialized,
+        metadataRepoPath: session.pathUtils.getMetadataStorageRoot(),
+        currentBranch: result.currentBranch,
+    };
+
+    console.log(`[Server] POST /git/init -> branch ${response.currentBranch}`);
+    res.json(response);
+});
+
+/**
+ * POST /git/sync
+ * Client detected a git operation (branch switch, checkout, etc.)
+ * Mirror it into the server's metadata repo.
+ */
+app.post('/git/sync', (req: Request, res: Response) => {
+    const session = requireSession(req, res);
+    if (!session) return;
+
+    const body = req.body as GitSyncRequest;
+
+    if (!body.branch || !body.headCommit) {
+        res.status(400).json({ error: 'Missing branch or headCommit' });
+        return;
+    }
+
+    const result = session.gitManager.syncBranch(
+        body.branch,
+        body.headCommit,
+        session.debugMode
+    );
+
+    // Update session debug mode if the server detected a different one
+    session.debugMode = result.detectedDebugMode;
+
+    const response: GitSyncResponse = {
+        synced: result.synced,
+        serverBranch: result.serverBranch,
+        fileUpdates: result.fileUpdates,
+        detectedDebugMode: result.detectedDebugMode,
+    };
+
+    console.log(`[Server] POST /git/sync -> ${response.serverBranch} (${Object.keys(response.fileUpdates).length} files updated)`);
+    res.json(response);
+});
+
+/**
+ * GET /git/status
+ * Query the current state of the server's metadata git repo.
+ */
+app.get('/git/status', (req: Request, res: Response) => {
+    const session = requireSession(req, res);
+    if (!session) return;
+
+    const response: GitStatusResponse = {
+        initialized: session.gitManager.isInitialized(),
+        currentBranch: session.gitManager.getCurrentBranch(),
+        headCommit: session.gitManager.getHeadCommit(),
+        trackedLedgerCount: session.ledgerStore.getTrackedFilePaths().length,
+    };
+
+    res.json(response);
+});
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Health / Status
