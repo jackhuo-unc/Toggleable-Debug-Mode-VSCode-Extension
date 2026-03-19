@@ -18,14 +18,19 @@ export class GitWatcher {
 
     // Track the last git HEAD to detect ACTUAL git operations
     private lastGitHead: string | null = null;
+    private lastIndexMtime: number = 0;
 
     private headWatcher: fs.FSWatcher | null = null;
+    private indexWatcher: fs.FSWatcher | null = null;
 
      /**
      * GLOBAL flag - when true, NOTHING in the extension should write metadata.
      * Checked by MetadataManager, LedgerStore, and extension.ts event handlers.
      */
     private _blocked: boolean = false;
+
+    private gitDir: string | null = null;
+    private rootDir: string | null = null;
 
     constructor(
         private readonly context: vscode.ExtensionContext,
@@ -62,22 +67,28 @@ export class GitWatcher {
             console.log('[GitWatcher] No root dir, skipping init');
             return;
         }
+        this.rootDir = rootDir;
 
         const gitDir = path.join(rootDir, '.git');
         if (!fs.existsSync(gitDir)) {
             console.log('[GitWatcher] No .git directory found, skipping init');
             return;
         }
+        this.gitDir = gitDir;
 
-        this.lastGitHead = this.readGitHead(gitDir);
+        this.lastGitHead = this.readGitHead();
         console.log('[GitWatcher] Initial HEAD:', this.lastGitHead?.substring(0, 8));
+        this.lastIndexMtime = this.getIndexMtime();
+
 
         const headPath = path.join(gitDir, 'HEAD');
+        const indexPath = path.join(this.gitDir, 'index');
+
         try {
             if (fs.existsSync(headPath)) {
                 this.headWatcher = fs.watch(headPath, () => {
                     console.log('[GitWatcher] .git/HEAD changed');
-                    this.onHeadTouched();
+                    this.onGitFileTouched('HEAD');
                 });
                 console.log('[GitWatcher] Watching .git/HEAD');
             }
@@ -85,7 +96,35 @@ export class GitWatcher {
             console.error('[GitWatcher] Failed to watch HEAD:', err);
         }
 
+        // Watch .git/index — fires on: restore, reset, add, stash, checkout (files)
+        try {
+            if (fs.existsSync(indexPath)) {
+                this.indexWatcher = fs.watch(indexPath, () => {
+                    console.log('[GitWatcher] .git/index changed');
+                    this.onGitFileTouched('index');
+                });
+                console.log('[GitWatcher] Watching .git/index');
+            }
+        } catch (err) {
+            console.error('[GitWatcher] Failed to watch index:', err);
+        }
+
         console.log('[GitWatcher] Initialized');
+    }
+
+    private onGitFileTouched(source: 'HEAD' | 'index'): void {
+        // IMMEDIATELY block everything
+        this._blocked = true;
+        console.log(`[GitWatcher] BLOCKED (triggered by ${source})`);
+
+        // Debounce — git operations often touch multiple files in sequence
+        if (this.gitOperationTimeout) {
+            clearTimeout(this.gitOperationTimeout);
+        }
+
+        this.gitOperationTimeout = setTimeout(async () => {
+            await this.handleGitSettled();
+        }, 0);
     }
 
     private onHeadTouched(): void {
@@ -100,67 +139,75 @@ export class GitWatcher {
 
         this.gitOperationTimeout = setTimeout(async () => {
             await this.handleGitSettled();
-        }, 1500); // Wait 1.5s for git to fully settle
+        }, 500); // Wait for git to fully settle
     }
 
     private async handleGitSettled(): Promise<void> {
-        const rootDir = this.pathUtils.getRootDir();
-        if (!rootDir) {
+        if (!this.rootDir || !this.gitDir) {
             this._blocked = false;
             return;
         }
 
-        const gitDir = path.join(rootDir, '.git');
-        const newHead = this.readGitHead(gitDir);
+        const newHead = this.readGitHead();
+        const newIndexMtime = this.getIndexMtime();
 
-        if (!newHead || newHead === this.lastGitHead) {
-            console.log('[GitWatcher] HEAD unchanged, unblocking');
+        const headChanged = newHead !== null && newHead !== this.lastGitHead;
+        const indexChanged = newIndexMtime !== this.lastIndexMtime;
+
+        if (!headChanged && !indexChanged) {
+            console.log('[GitWatcher] No actual changes detected, unblocking');
             this._blocked = false;
             return;
         }
 
         console.log('[GitWatcher] ════════════════════════════════════');
-        console.log('[GitWatcher] HEAD changed:', this.lastGitHead?.substring(0, 8), '->', newHead.substring(0, 8));
+        if (headChanged) {
+            console.log('[GitWatcher] HEAD changed:',
+                this.lastGitHead?.substring(0, 8), '->', newHead?.substring(0, 8));
+        }
+        if (indexChanged) {
+            console.log('[GitWatcher] Index mtime changed:',
+                this.lastIndexMtime, '->', newIndexMtime);
+        }
         console.log('[GitWatcher] ════════════════════════════════════');
+
         this.lastGitHead = newHead;
+        this.lastIndexMtime = newIndexMtime;
 
         try {
-            // Step 1: git restore . to undo any metadata corruption
+            // Step 1: Undo any metadata corruption
             console.log('[GitWatcher] Running: git restore .');
-            execSync('git restore .', { cwd: rootDir, stdio: 'pipe' });
+            execSync('git restore .', { cwd: this.rootDir, stdio: 'pipe' });
             console.log('[GitWatcher] git restore complete');
 
-            // Step 2: Small delay to let disk settle
+            // Step 2: Wait for disk to settle
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            // Step 3: Reload the entire VS Code window
-            // This is the nuclear option but guaranteed to work
+            // Step 3: Reload the window
             console.log('[GitWatcher] Reloading window...');
             await vscode.commands.executeCommand('workbench.action.reloadWindow');
 
         } catch (err) {
             console.error('[GitWatcher] Error during git recovery:', err);
-            // Even on error, try to reload
             try {
                 await vscode.commands.executeCommand('workbench.action.reloadWindow');
             } catch {
-                // Last resort - unblock and hope for the best
                 this._blocked = false;
                 vscode.window.showErrorMessage(
-                    'Debug extension: Git operation recovery failed. Please reload the window manually.'
+                    'Debug extension: Git recovery failed. Please reload the window manually.'
                 );
             }
         }
-        // Note: _blocked stays true - the window reload will re-activate the extension fresh
     }
 
-    private readGitHead(gitDir: string): string | null {
+    private readGitHead(): string | null {
+        if (!this.gitDir) return null;
         try {
-            const headPath = path.join(gitDir, 'HEAD');
+            const headPath = path.join(this.gitDir, 'HEAD');
             const headContent = fs.readFileSync(headPath, 'utf-8').trim();
 
             if (headContent.startsWith('ref: ')) {
-                const refPath = path.join(gitDir, headContent.slice(5));
+                const refPath = path.join(this.gitDir, headContent.slice(5));
                 if (fs.existsSync(refPath)) {
                     return fs.readFileSync(refPath, 'utf-8').trim();
                 }
@@ -172,8 +219,19 @@ export class GitWatcher {
         }
     }
 
+    private getIndexMtime(): number {
+        if (!this.gitDir) return 0;
+        try {
+            const indexPath = path.join(this.gitDir, 'index');
+            const stat = fs.statSync(indexPath);
+            return stat.mtimeMs;
+        } catch {
+            return 0;
+        }
+    }
+
     private onGitFileChanged(gitDir: string): void {
-        const newHead = this.readGitHead(gitDir);
+        const newHead = this.readGitHead();
         
         // Only trigger if HEAD actually changed (different commit)
         if (newHead && newHead !== this.lastGitHead) {
@@ -334,6 +392,10 @@ export class GitWatcher {
         if (this.headWatcher) {
             this.headWatcher.close();
             this.headWatcher = null;
+        }
+        if (this.indexWatcher) {
+            this.indexWatcher.close();
+            this.indexWatcher = null;
         }
     }
 }
