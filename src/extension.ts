@@ -113,6 +113,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	context.subscriptions.push(
 		vscode.workspace.onDidChangeTextDocument((event) => {
 			if (event.contentChanges.length === 0) return;
+			if (!metadataManager) return;
+			// BLOCK during git operations - this is the most critical guard
+            if (metadataManager.isBlocked()) return;
 			if (!metadataManager.shouldTrackFile(event.document.uri.fsPath)) return;
 			if (undoRedoManager?.isPerformingUndoRedo()) return;
 
@@ -134,6 +137,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	//8. Initialize ledgers for open documents
 	context.subscriptions.push(
 		vscode.workspace.onDidOpenTextDocument(async (document) => {
+			// BLOCK during git operations
+            if (metadataManager.isBlocked()) return;
 			if (!metadataManager.shouldTrackFile(document.uri.fsPath)) return;
 			await metadataManager?.ensureLedgerForDoc(document);
 		})
@@ -148,6 +153,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	// 10. Init ledgers for already open documents
 	for (const document of vscode.workspace.textDocuments) {
+		if (metadataManager.isBlocked()) return;
 		if (!metadataManager.shouldTrackFile(document.uri.fsPath)) continue;
 		await metadataManager?.ensureLedgerForDoc(document);
 	}

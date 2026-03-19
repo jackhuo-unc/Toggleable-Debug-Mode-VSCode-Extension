@@ -25,6 +25,14 @@ export class MetadataManager {
     // Flag to prevent infinite loops when we programmatically edit files
     private isApplyingEdit: boolean = false;
 
+    /**
+     * Is processing blocked due to a git operation?
+     * When true, NO metadata should be written, NO segments should be updated.
+     */
+    public isBlocked(): boolean {
+        return this.gitWatcher.blocked;
+    }
+
 	constructor(context: vscode.ExtensionContext) {
 		this.context = context;
         this.pathUtils = new PathUtils();
@@ -34,7 +42,6 @@ export class MetadataManager {
             context,
             this.pathUtils,
             this.ledgerStore,
-            this.segmentManager,
             async (filePath, ledger, includeDebug) => {
                 await this.rebuildSourceFileFromLedger(filePath, ledger, includeDebug);
             }
@@ -48,6 +55,7 @@ export class MetadataManager {
 
 	public async init(): Promise<void> {
 		console.log('[MetadataManager] init()');
+        this.ledgerStore.setBlockedCheck(() => this.gitWatcher.blocked);
         await this.pathUtils.init();
         await this.gitWatcher.init();
 	}
@@ -120,6 +128,12 @@ export class MetadataManager {
         if (this.isApplyingEdit) return;
         if (doc.uri.scheme !== 'file') return;
 
+        // BLOCK during git operations
+        if (this.gitWatcher.blocked) {
+            console.log('[MetadataManager] BLOCKED - ignoring text change during git operation');
+            return;
+        }
+
         const filePath = doc.uri.fsPath;
 
         // Skip during git operations
@@ -171,6 +185,11 @@ export class MetadataManager {
 
     public async ensureLedgerForDoc(doc: vscode.TextDocument): Promise<FileLedger | null> {
         if (doc.uri.scheme !== 'file') return null;
+        // BLOCK during git operations
+        if (this.gitWatcher.blocked) {
+            console.log('[MetadataManager] BLOCKED - not initializing ledger during git operation');
+            return;
+        }
 
         const filePath = doc.uri.fsPath;
         if (!this.pathUtils.shouldTrackFile(filePath)) return null;

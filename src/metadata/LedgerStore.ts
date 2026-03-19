@@ -47,6 +47,16 @@ export class LedgerStore {
         return this.ledgers.size;
     }
 
+    // Reference to check git blocked state
+    private isBlockedFn: (() => boolean) | null = null;
+
+    /**
+     * Set a function that returns whether saves are blocked
+     */
+    public setBlockedCheck(fn: () => boolean): void {
+        this.isBlockedFn = fn;
+    }
+
     /**
      * Get all file paths that have ledgers loaded
      */
@@ -105,6 +115,10 @@ export class LedgerStore {
      * Queue a ledger for saving
      */
     public queueSave(filePath: string): void {
+        if (this.isBlockedFn && this.isBlockedFn()) {
+            console.log('[LedgerStore] BLOCKED - not queuing save during git operation:', filePath);
+            return;
+        }
         this.saveQueue.add(filePath);
 
         if (this.saveTimeout) {
@@ -134,6 +148,11 @@ export class LedgerStore {
     private async saveToDisk(filePath: string): Promise<void> {
         const ledger = this.ledgers.get(filePath);
         if (!ledger) return;
+        // BLOCK during git operations
+        if (this.isBlockedFn && this.isBlockedFn()) {
+            console.log('[LedgerStore] BLOCKED - not saving during git operation:', filePath);
+            return;
+        }
 
         const metaDir = this.pathUtils.getMetadataDir(filePath);
         const metaPath = this.pathUtils.getMetadataPath(filePath);

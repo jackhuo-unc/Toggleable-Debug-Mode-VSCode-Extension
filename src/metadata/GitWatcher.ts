@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { execSync } from 'child_process';
 import { FileLedger, DebugModeChangeCallback } from './Types';
 import { PathUtils } from './PathUtils';
 import { LedgerStore } from './LedgerStore';
-import { SegmentManager } from './SegmentManager';
 
 export class GitWatcher {
     private isGitOperation: boolean = false;
@@ -19,13 +19,28 @@ export class GitWatcher {
     // Track the last git HEAD to detect ACTUAL git operations
     private lastGitHead: string | null = null;
 
+    private headWatcher: fs.FSWatcher | null = null;
+
+     /**
+     * GLOBAL flag - when true, NOTHING in the extension should write metadata.
+     * Checked by MetadataManager, LedgerStore, and extension.ts event handlers.
+     */
+    private _blocked: boolean = false;
+
     constructor(
         private readonly context: vscode.ExtensionContext,
         private readonly pathUtils: PathUtils,
         private readonly ledgerStore: LedgerStore,
-        private readonly segmentManager: SegmentManager,
         private readonly onRebuildFile: (filePath: string, ledger: FileLedger, includeDebug: boolean) => Promise<void>
     ) {}
+
+    /**
+     * Is the extension currently blocked due to a git operation?
+     * This should be checked before ANY metadata write or segment processing.
+     */
+    public get blocked(): boolean {
+        return this._blocked;
+    }
 
     /**
      * Register a callback to be notified when debug mode should change
@@ -43,40 +58,113 @@ export class GitWatcher {
      */
     public init(): void {
         const rootDir = this.pathUtils.getRootDir();
-        if (!rootDir) return;
+        if (!rootDir) {
+            console.log('[GitWatcher] No root dir, skipping init');
+            return;
+        }
 
         const gitDir = path.join(rootDir, '.git');
-        if (!fs.existsSync(gitDir)) return;
+        if (!fs.existsSync(gitDir)) {
+            console.log('[GitWatcher] No .git directory found, skipping init');
+            return;
+        }
 
-        // Read initial HEAD
         this.lastGitHead = this.readGitHead(gitDir);
         console.log('[GitWatcher] Initial HEAD:', this.lastGitHead?.substring(0, 8));
 
-        // Use file system watcher for git files
-        const gitWatcher = vscode.workspace.createFileSystemWatcher(
-            new vscode.RelativePattern(gitDir, 'HEAD')
-        );
+        const headPath = path.join(gitDir, 'HEAD');
+        try {
+            if (fs.existsSync(headPath)) {
+                this.headWatcher = fs.watch(headPath, () => {
+                    console.log('[GitWatcher] .git/HEAD changed');
+                    this.onHeadTouched();
+                });
+                console.log('[GitWatcher] Watching .git/HEAD');
+            }
+        } catch (err) {
+            console.error('[GitWatcher] Failed to watch HEAD:', err);
+        }
 
-        this.context.subscriptions.push(
-            gitWatcher.onDidChange(() => this.onGitOperationDetected()),
-            // gitWatcher.onDidCreate(() => this.onGitOperationDetected()),
-            gitWatcher
-        );
+        console.log('[GitWatcher] Initialized');
+    }
 
-         console.log('[GitWatcher] Initialized - watching HEAD only');
+    private onHeadTouched(): void {
+        // IMMEDIATELY block everything
+        this._blocked = true;
+        console.log('[GitWatcher] BLOCKED all extension processing');
+
+        // Debounce - git may touch HEAD multiple times
+        if (this.gitOperationTimeout) {
+            clearTimeout(this.gitOperationTimeout);
+        }
+
+        this.gitOperationTimeout = setTimeout(async () => {
+            await this.handleGitSettled();
+        }, 1500); // Wait 1.5s for git to fully settle
+    }
+
+    private async handleGitSettled(): Promise<void> {
+        const rootDir = this.pathUtils.getRootDir();
+        if (!rootDir) {
+            this._blocked = false;
+            return;
+        }
+
+        const gitDir = path.join(rootDir, '.git');
+        const newHead = this.readGitHead(gitDir);
+
+        if (!newHead || newHead === this.lastGitHead) {
+            console.log('[GitWatcher] HEAD unchanged, unblocking');
+            this._blocked = false;
+            return;
+        }
+
+        console.log('[GitWatcher] ════════════════════════════════════');
+        console.log('[GitWatcher] HEAD changed:', this.lastGitHead?.substring(0, 8), '->', newHead.substring(0, 8));
+        console.log('[GitWatcher] ════════════════════════════════════');
+        this.lastGitHead = newHead;
+
+        try {
+            // Step 1: git restore . to undo any metadata corruption
+            console.log('[GitWatcher] Running: git restore .');
+            execSync('git restore .', { cwd: rootDir, stdio: 'pipe' });
+            console.log('[GitWatcher] git restore complete');
+
+            // Step 2: Small delay to let disk settle
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Step 3: Reload the entire VS Code window
+            // This is the nuclear option but guaranteed to work
+            console.log('[GitWatcher] Reloading window...');
+            await vscode.commands.executeCommand('workbench.action.reloadWindow');
+
+        } catch (err) {
+            console.error('[GitWatcher] Error during git recovery:', err);
+            // Even on error, try to reload
+            try {
+                await vscode.commands.executeCommand('workbench.action.reloadWindow');
+            } catch {
+                // Last resort - unblock and hope for the best
+                this._blocked = false;
+                vscode.window.showErrorMessage(
+                    'Debug extension: Git operation recovery failed. Please reload the window manually.'
+                );
+            }
+        }
+        // Note: _blocked stays true - the window reload will re-activate the extension fresh
     }
 
     private readGitHead(gitDir: string): string | null {
         try {
             const headPath = path.join(gitDir, 'HEAD');
             const headContent = fs.readFileSync(headPath, 'utf-8').trim();
-            
-            // HEAD can be a ref (ref: refs/heads/main) or a commit hash
+
             if (headContent.startsWith('ref: ')) {
                 const refPath = path.join(gitDir, headContent.slice(5));
                 if (fs.existsSync(refPath)) {
                     return fs.readFileSync(refPath, 'utf-8').trim();
                 }
+                return headContent;
             }
             return headContent;
         } catch {
@@ -242,6 +330,10 @@ export class GitWatcher {
     public dispose(): void {
         if (this.gitOperationTimeout) {
             clearTimeout(this.gitOperationTimeout);
+        }
+        if (this.headWatcher) {
+            this.headWatcher.close();
+            this.headWatcher = null;
         }
     }
 }
