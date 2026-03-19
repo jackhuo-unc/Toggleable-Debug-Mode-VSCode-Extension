@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { HiddenCodeOverlay } from './HiddenCodeOverlay';
-import { getWebContent } from './web';
+import { getWebContent } from '../web';
 
 export class UIManager {
     private readonly context: vscode.ExtensionContext;

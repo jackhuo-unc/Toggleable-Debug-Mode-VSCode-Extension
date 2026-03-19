@@ -9,8 +9,8 @@ import { UndoRedoTest } from './suite/UndoRedoTest';
 import { GitIntegrationTest } from './suite/GitIntegrationTest';
 import { saveAndCloseActiveEditor, saveAndCloseAllEditors} from './SaveAndClose';
 
-import { MetadataManager } from '../MetadataManager';
-import { HiddenCodeOverlay } from '../HiddenCodeOverlay';
+import { MetadataManager } from '../local/MetadataManager';
+import { HiddenCodeOverlay } from '../local/HiddenCodeOverlay';
 
 /**
  * Get the output directory for reports (can stay in extension path)

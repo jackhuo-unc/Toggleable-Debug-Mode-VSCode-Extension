@@ -3,8 +3,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
 import { PerformanceTestFramework } from '../PerformanceTestFramework';
-import { MetadataManager } from '../../MetadataManager';
-import { HiddenCodeOverlay } from '../../HiddenCodeOverlay';
+import { MetadataManager } from '../../local/MetadataManager';
+import { HiddenCodeOverlay } from '../../local/HiddenCodeOverlay';
 import { saveAndCloseActiveEditor, saveAndCloseAllEditors } from '../SaveAndClose';
 
 export class GitIntegrationTest {

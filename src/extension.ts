@@ -6,10 +6,10 @@ import * as path from 'path';
 import * as web from './web';
 // import { LogNameManager } from './LogNameManager';
 // import { TrackerManager } from './TrackerManager';
-import { UIManager } from './UIManager';
-import { HiddenCodeOverlay } from './HiddenCodeOverlay';
-import { MetadataManager } from './MetadataManager';
-import { UndoRedoManager } from './UndoRedoManager';
+import { UIManager } from './local/UIManager';
+import { HiddenCodeOverlay } from './local/HiddenCodeOverlay';
+import { MetadataManager } from './local/MetadataManager';
+import { UndoRedoManager } from './local/UndoRedoManager';
 
 import { runAllPerformanceTests } from './test/RunPerformanceTest';
 

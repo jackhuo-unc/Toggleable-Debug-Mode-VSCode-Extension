@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { PerformanceTestFramework } from '../PerformanceTestFramework';
-import { HiddenCodeOverlay } from '../../HiddenCodeOverlay';
+import { HiddenCodeOverlay } from '../../local/HiddenCodeOverlay';
 
 export class ModeToggleTest {
     private framework: PerformanceTestFramework;

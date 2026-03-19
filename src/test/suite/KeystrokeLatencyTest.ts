@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { PerformanceTestFramework } from '../PerformanceTestFramework';
-import { MetadataManager } from '../../MetadataManager';
-import { HiddenCodeOverlay } from '../../HiddenCodeOverlay';
+import { MetadataManager } from '../../local/MetadataManager';
+import { HiddenCodeOverlay } from '../../local/HiddenCodeOverlay';
 
 export type InsertPosition = 'start' | 'middle' | 'end';
 

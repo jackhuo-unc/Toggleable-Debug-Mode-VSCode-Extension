@@ -11,8 +11,8 @@ let terminalSessions: string[] = [];
 let terminalSessionWatcher;
 
 import { LogNameManager } from './LogNameManager';
-import { MetadataManager } from './MetadataManager';
-import { HiddenCodeOverlay } from './HiddenCodeOverlay';
+import { MetadataManager } from './local/MetadataManager';
+import { HiddenCodeOverlay } from './local/HiddenCodeOverlay';
 
 export class TrackerManager {
 	private disposable: vscode.Disposable;

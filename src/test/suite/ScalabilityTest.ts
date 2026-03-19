@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PerformanceTestFramework } from '../PerformanceTestFramework';
-import { MetadataManager } from '../../MetadataManager';
-import { HiddenCodeOverlay } from '../../HiddenCodeOverlay';
+import { MetadataManager } from '../../local/MetadataManager';
+import { HiddenCodeOverlay } from '../../local/HiddenCodeOverlay';
 import { saveAndCloseActiveEditor } from '../SaveAndClose';
 
 export interface FileSizeConfig {
