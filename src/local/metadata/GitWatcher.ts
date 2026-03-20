@@ -124,7 +124,7 @@ export class GitWatcher {
 
         this.gitOperationTimeout = setTimeout(async () => {
             await this.handleGitSettled();
-        }, 0);
+        }, 500);
     }
 
     private onHeadTouched(): void {
@@ -139,7 +139,7 @@ export class GitWatcher {
 
         this.gitOperationTimeout = setTimeout(async () => {
             await this.handleGitSettled();
-        }, 500); // Wait for git to fully settle
+        }, 10); // Wait for git to fully settle
     }
 
     private async handleGitSettled(): Promise<void> {
@@ -278,7 +278,7 @@ export class GitWatcher {
             await this.handlePostGitOperation();
             this.isGitOperation = false;
             this.skipProcessing.clear();
-        }, 500);
+        }, 10);
     }
 
     /**
